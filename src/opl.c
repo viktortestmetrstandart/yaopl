@@ -1657,7 +1657,6 @@ int oplUpdateGameCompatSingle(int id, item_list_t *support, config_set_t *config
 // -------------------- NBD SRV Support ---------------------
 // ----------------------------------------------------------
 
-
 static int loadLwnbdSvr(void)
 {
     int ret, padStatus;
@@ -1846,13 +1845,13 @@ static void setDefaults(void)
     hddCacheSize = 8;
     smbCacheSize = 16;
 
-    ps2_ip_use_dhcp = 1;
-    gETHOpMode = ETH_OP_MODE_AUTO;
+    ps2_ip_use_dhcp = 0;
+    gETHOpMode = ETH_OP_MODE_100M_FDX;
     gPCShareAddressIsNetBIOS = 1;
     gPCShareNBAddress[0] = '\0';
     ps2_ip[0] = 192;
     ps2_ip[1] = 168;
-    ps2_ip[2] = 0;
+    ps2_ip[2] = 1;
     ps2_ip[3] = 10;
     ps2_netmask[0] = 255;
     ps2_netmask[1] = 255;
@@ -1860,15 +1859,15 @@ static void setDefaults(void)
     ps2_netmask[3] = 0;
     ps2_gateway[0] = 192;
     ps2_gateway[1] = 168;
-    ps2_gateway[2] = 0;
+    ps2_gateway[2] = 1;
     ps2_gateway[3] = 1;
     pc_ip[0] = 192;
     pc_ip[1] = 168;
-    pc_ip[2] = 0;
-    pc_ip[3] = 2;
+    pc_ip[2] = 1;
+    pc_ip[3] = 1;
     ps2_dns[0] = 192;
     ps2_dns[1] = 168;
-    ps2_dns[2] = 0;
+    ps2_dns[2] = 1;
     ps2_dns[3] = 1;
     gPCPort = 445;
     gPCShareName[0] = '\0';
@@ -1878,7 +1877,7 @@ static void setDefaults(void)
     gHDDSpindown = 20;
     gScrollSpeed = 1;
     gExitPath[0] = '\0';
-    gDefaultDevice = APP_MODE;
+    gDefaultDevice = BDM_MODE;
     gAutosort = 1;
     gAutoRefresh = 0;
     gEnableDebug = 0;
@@ -1892,11 +1891,11 @@ static void setDefaults(void)
     gBDMPrefix[0] = '\0';
     gETHPrefix[0] = '\0';
     gEnableNotifications = 0;
-    gEnableArt = 0;
+    gEnableArt = 1;
     gWideScreen = 0;
     gEnableSFX = 0;
     gEnableBootSND = 0;
-    gEnableBGM = 0;
+    gEnableBGM = 1;
     gSFXVolume = 80;
     gBootSndVolume = 80;
     gBGMVolume = 70;
@@ -1904,7 +1903,7 @@ static void setDefaults(void)
     gXSensitivity = 1;
     gYSensitivity = 1;
 
-    gBDMStartMode = START_MODE_DISABLED;
+    gBDMStartMode = START_MODE_AUTO;
     gHDDStartMode = START_MODE_DISABLED;
     gETHStartMode = START_MODE_DISABLED;
     gAPPStartMode = START_MODE_DISABLED;
@@ -1917,7 +1916,7 @@ static void setDefaults(void)
     gEnableILK = 0;
     gEnableMX4SIO = 0;
     gEnableBdmHDD = 0;
-    gEnableUDPBD = 0;
+    gEnableUDPBD = 1;
 
     frameCounter = 0;
 
@@ -1973,7 +1972,6 @@ static void init(void)
         LOG("--- SKIPPING OPL CONFIG LOADING\n");
         applyConfig(-1, -1, 0);
     }
-
 
     // queue deffered init of sound effects, which will take place after the preceding initialization steps within the queue are complete.
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredAudioInit);
@@ -2179,7 +2177,6 @@ static void autoLaunchBDMGame(char *argv[])
         snprintf(path, sizeof(path), "%sCFG/%s.cfg", apaDevicePrefix, gAutoLaunchBDMGame->startup);
         snprintf(gAutoLaunchDeviceData->bdmPrefix, sizeof(gAutoLaunchDeviceData->bdmPrefix), "%s", apaDevicePrefix);
     }
-
 
     configSet = configAlloc(0, NULL, path);
     configRead(configSet);
