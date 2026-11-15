@@ -4,7 +4,8 @@ What changed in YAOPL (Yet Another Open PS2 Loader), newest first; below it, wha
 Loader (OPL) before the fork.
 
 ## Unreleased
-
+- Defaults: Enable BDM (USB + UDPBD), cover/disc art, static network settings (192.168.1.10, 100M FDX) and
+  embedded default BGM by default; disable the info page in the built-in theme.
 - GUI: A cover or theme image far larger than the menu can show (over 1024 pixels wide or high) is refused
   before it takes megabytes of memory. (07c868d2)
 - GUI: A cover or theme image that is cut short or damaged no longer loses up to 1.4 MiB of memory each time
