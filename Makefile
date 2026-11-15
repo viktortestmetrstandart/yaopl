@@ -837,6 +837,9 @@ $(EE_ASM_DIR)bd_connect.c: audio/bd_connect.adp | $(EE_ASM_DIR)
 $(EE_ASM_DIR)bd_disconnect.c: audio/bd_disconnect.adp | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_adp
 
+$(EE_ASM_DIR)bgm.c: audio/bgm.ogg | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ $(*F)_ogg
+
 $(EE_ASM_DIR)IOPRP_img.c: modules/iopcore/IOPRP.img | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)
 
