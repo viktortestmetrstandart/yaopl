@@ -394,7 +394,7 @@ static void bgmIoThread(void *arg)
 
 static int bgmLoad(void)
 {
-    FILE *bgmFile = NULL;
+    FILE *bgmFile;
     char bgmPath[256];
 
     vorbisFile = malloc(sizeof(OggVorbis_File));
@@ -407,31 +407,36 @@ static int bgmLoad(void)
     } else
         snprintf(bgmPath, sizeof(bgmPath), "%s", gDefaultBGMPath);
 
-    if (bgmPath[0] != '\0')
-        bgmFile = fopen(bgmPath, "rb");
+    bgmFile = fopen(bgmPath, "rb");
+    if (bgmFile == NULL) {
+        LOG("BGM: Failed to open Ogg file %s\n", bgmPath);
+        return -ENOENT;
+    }
 
-    if (bgmFile != NULL) {
-        if (ov_open_callbacks(bgmFile, vorbisFile, NULL, 0, OV_CALLBACKS_DEFAULT) >= 0)
-            return 0;
-
+    if (ov_open_callbacks(bgmFile, vorbisFile, NULL, 0, OV_CALLBACKS_DEFAULT) < 0) {
         LOG("BGM: Input does not appear to be an Ogg bitstream.\n");
         // Vorbisfile closes the file only once it has taken it
         fclose(bgmFile);
-        memset(vorbisFile, 0, sizeof(OggVorbis_File));
-    } else if (bgmPath[0] != '\0') {
-        LOG("BGM: Failed to open Ogg file %s\n", bgmPath);
+        return -ENOENT;
     }
+
+    return 0;
+}
+
+static int bgmLoadBuiltin(void)
+{
+    if (vorbisFile == NULL)
+        vorbisFile = malloc(sizeof(OggVorbis_File));
+    if (vorbisFile == NULL)
+        return -ENOMEM;
+
+    memset(vorbisFile, 0, sizeof(OggVorbis_File));
 
     bgmMem.data = bgm_ogg;
     bgmMem.size = size_bgm_ogg;
     bgmMem.pos = 0;
 
-    ov_callbacks memCallbacks = {
-        &bgmMemRead,
-        &bgmMemSeek,
-        &bgmMemClose,
-        &bgmMemTell,
-    };
+    ov_callbacks memCallbacks = {&bgmMemRead, &bgmMemSeek, &bgmMemClose, &bgmMemTell};
 
     if (ov_open_callbacks(&bgmMem, vorbisFile, NULL, 0, memCallbacks) < 0) {
         LOG("BGM: Built-in BGM is not a valid Ogg bitstream.\n");
@@ -541,7 +546,7 @@ void bgmStart(void)
 
     int ret = bgmInit();
     if (ret >= 0) {
-        if (bgmLoad() != 0) {
+        if (bgmLoad() != 0 && bgmLoadBuiltin() != 0) {
             bgmDeinit();
             return;
         }
