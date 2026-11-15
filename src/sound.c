@@ -44,6 +44,9 @@ extern unsigned int size_bd_connect_adp;
 extern unsigned char bd_disconnect_adp[];
 extern unsigned int size_bd_disconnect_adp;
 
+extern unsigned char bgm_ogg[];
+extern unsigned int size_bgm_ogg;
+
 struct sfxEffect
 {
     const char *name;
@@ -262,6 +265,70 @@ static u8 bgmIoThreadStack[BGM_THREAD_STACK_SIZE] __attribute__((aligned(16)));
 
 static OggVorbis_File *vorbisFile;
 
+typedef struct
+{
+    const unsigned char *data;
+    unsigned int size;
+    unsigned int pos;
+} bgm_mem_t;
+
+static bgm_mem_t bgmMem;
+
+static size_t bgmMemRead(void *ptr, size_t size, size_t nmemb, void *datasource)
+{
+    bgm_mem_t *mem = (bgm_mem_t *)datasource;
+    size_t bytes = size * nmemb;
+    size_t avail = (mem->pos < mem->size) ? (mem->size - mem->pos) : 0;
+
+    if (bytes > avail)
+        bytes = avail;
+
+    if (bytes > 0) {
+        memcpy(ptr, mem->data + mem->pos, bytes);
+        mem->pos += bytes;
+    }
+
+    return (size > 0) ? (bytes / size) : 0;
+}
+
+static int bgmMemSeek(void *datasource, ogg_int64_t offset, int whence)
+{
+    bgm_mem_t *mem = (bgm_mem_t *)datasource;
+    ogg_int64_t newpos;
+
+    switch (whence) {
+        case SEEK_SET:
+            newpos = offset;
+            break;
+        case SEEK_CUR:
+            newpos = (ogg_int64_t)mem->pos + offset;
+            break;
+        case SEEK_END:
+            newpos = (ogg_int64_t)mem->size + offset;
+            break;
+        default:
+            return -1;
+    }
+
+    if (newpos < 0 || newpos > (ogg_int64_t)mem->size)
+        return -1;
+
+    mem->pos = (unsigned int)newpos;
+    return 0;
+}
+
+static int bgmMemClose(void *datasource)
+{
+    (void)datasource;
+    return 0;
+}
+
+static long bgmMemTell(void *datasource)
+{
+    bgm_mem_t *mem = (bgm_mem_t *)datasource;
+    return (long)mem->pos;
+}
+
 static void bgmThread(void *arg)
 {
     bgmThreadRunning = 1;
@@ -327,7 +394,7 @@ static void bgmIoThread(void *arg)
 
 static int bgmLoad(void)
 {
-    FILE *bgmFile;
+    FILE *bgmFile = NULL;
     char bgmPath[256];
 
     vorbisFile = malloc(sizeof(OggVorbis_File));
@@ -340,16 +407,34 @@ static int bgmLoad(void)
     } else
         snprintf(bgmPath, sizeof(bgmPath), "%s", gDefaultBGMPath);
 
-    bgmFile = fopen(bgmPath, "rb");
-    if (bgmFile == NULL) {
-        LOG("BGM: Failed to open Ogg file %s\n", bgmPath);
-        return -ENOENT;
-    }
+    if (bgmPath[0] != '\0')
+        bgmFile = fopen(bgmPath, "rb");
 
-    if (ov_open_callbacks(bgmFile, vorbisFile, NULL, 0, OV_CALLBACKS_DEFAULT) < 0) {
+    if (bgmFile != NULL) {
+        if (ov_open_callbacks(bgmFile, vorbisFile, NULL, 0, OV_CALLBACKS_DEFAULT) >= 0)
+            return 0;
+
         LOG("BGM: Input does not appear to be an Ogg bitstream.\n");
         // Vorbisfile closes the file only once it has taken it
         fclose(bgmFile);
+        memset(vorbisFile, 0, sizeof(OggVorbis_File));
+    } else if (bgmPath[0] != '\0') {
+        LOG("BGM: Failed to open Ogg file %s\n", bgmPath);
+    }
+
+    bgmMem.data = bgm_ogg;
+    bgmMem.size = size_bgm_ogg;
+    bgmMem.pos = 0;
+
+    ov_callbacks memCallbacks = {
+        &bgmMemRead,
+        &bgmMemSeek,
+        &bgmMemClose,
+        &bgmMemTell,
+    };
+
+    if (ov_open_callbacks(&bgmMem, vorbisFile, NULL, 0, memCallbacks) < 0) {
+        LOG("BGM: Built-in BGM is not a valid Ogg bitstream.\n");
         return -ENOENT;
     }
 
