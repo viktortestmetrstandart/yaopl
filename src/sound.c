@@ -16,6 +16,7 @@
 static ov_callbacks OV_CALLBACKS_NOCLOSE __attribute__((unused));
 static ov_callbacks OV_CALLBACKS_STREAMONLY __attribute__((unused));
 static ov_callbacks OV_CALLBACKS_STREAMONLY_NOCLOSE __attribute__((unused));
+static ov_callbacks OV_CALLBACKS_DEFAULT __attribute__((unused));
 
 /*--    Theme Sound Effects    ----------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------*/
@@ -44,9 +45,6 @@ extern unsigned int size_bd_connect_adp;
 extern unsigned char bd_disconnect_adp[];
 extern unsigned int size_bd_disconnect_adp;
 
-extern unsigned char bgm_ogg[];
-extern unsigned int size_bgm_ogg;
-
 struct sfxEffect
 {
     const char *name;
@@ -70,7 +68,6 @@ static struct sfxEffect sfx_files[SFX_COUNT] = {
 static struct audsrv_adpcm_t sfx[SFX_COUNT];
 static int audio_initialized = 0;
 
-// Returns 0 if the specified file was read. The sfxEffect structure will not be updated unless the file is successfully read.
 static int sfxRead(const char *full_path, struct sfxEffect *sfx)
 {
     int adpcm;
@@ -115,7 +112,6 @@ static int sfxCalculateSoundDuration(int nSamples)
 {
     float sampleRate = 44100; // 44.1kHz
 
-    // Return duration in milliseconds
     return (nSamples / sampleRate) * 1000;
 }
 
@@ -144,34 +140,28 @@ static void sfxInitDefaults(void)
     sfx_files[SFX_BD_DISCONNECT].size = size_bd_disconnect_adp;
 }
 
-// Returns 0 (AUDSRV_ERR_NOERROR) if the sound was loaded successfully.
 static int sfxLoad(struct sfxEffect *sfxData, audsrv_adpcm_t *sfx)
 {
     int ret;
 
-    // Calculate duration based on number of samples
     sfxData->duration_ms = sfxCalculateSoundDuration(((u32 *)sfxData->buffer)[3]);
-    // Estimate duration based on filesize, if the ADPCM header was 0
     if (sfxData->duration_ms == 0)
         sfxData->duration_ms = sfxData->size / 47;
 
     ret = audsrv_load_adpcm(sfx, sfxData->buffer, sfxData->size);
     if (sfxData->builtin == 0) {
         free(sfxData->buffer);
-        sfxData->buffer = NULL; // Mark the buffer as freed.
+        sfxData->buffer = NULL;
     }
 
     return ret;
 }
 
-// Returns number of audio files successfully loaded, < 0 if an unrecoverable error occurred.
 int sfxInit(int bootSnd)
 {
-    char sound_path[256];
     char full_path[256];
     int ret, loaded;
-    int thmSfxEnabled = 0;
-    int i = 1;
+    int i;
 
     if (!audio_initialized) {
         LOG("SFX: %s: ERROR: not initialized!\n", __FUNCTION__);
@@ -182,32 +172,10 @@ int sfxInit(int bootSnd)
     sfxInitDefaults();
     audioSetVolume();
 
-    // Check default theme is not current theme
-    int themeID = thmGetGuiValue();
-    if (themeID != 0) {
-        // Get theme path for sfx
-        char *thmPath = thmGetFilePath(themeID);
-        snprintf(sound_path, sizeof(sound_path), "%ssound", thmPath);
-
-        // Check for custom sfx folder
-        DIR *dir = opendir(sound_path);
-        if (dir != NULL) {
-            thmSfxEnabled = 1;
-            closedir(dir);
-        }
-    }
-
     loaded = 0;
     i = bootSnd ? 0 : 1;
     for (; i < SFX_COUNT; i++) {
-        if (thmSfxEnabled) {
-            snprintf(full_path, sizeof(full_path), "%s/%s", sound_path, sfx_files[i].name);
-            ret = sfxRead(full_path, &sfx_files[i]);
-            if (ret != 0) {
-                LOG("SFX: %s could not be loaded. Using default sound %d.\n", full_path, ret);
-            }
-        } else
-            snprintf(full_path, sizeof(full_path), "builtin/%s", sfx_files[i].name);
+        snprintf(full_path, sizeof(full_path), "builtin/%s", sfx_files[i].name);
 
         ret = sfxLoad(&sfx_files[i], &sfx[i]);
         if (ret == 0) {
@@ -218,6 +186,7 @@ int sfxInit(int bootSnd)
         }
     }
 
+    (void)&sfxRead;
     return loaded;
 }
 
@@ -243,19 +212,22 @@ void sfxPlay(int id)
     }
 }
 
-/*--    Theme Background Music    -------------------------------------------------------------------------------------------
+/*--    External Background Music (Loaded into EE RAM)    ------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------------------------*/
 
 #define BGM_RING_BUFFER_COUNT 16
 #define BGM_RING_BUFFER_SIZE  4096
 #define BGM_THREAD_BASE_PRIO  0x40
 #define BGM_THREAD_STACK_SIZE 0x1000
+#define BGM_MAX_FILE_SIZE     (6 * 1024 * 1024)
 
 extern void *_gp;
 
 static int bgmThreadID, bgmIoThreadID;
 static int outSema, inSema;
+static s32 bgmStateSema = -1;
 static unsigned char terminateFlag, bgmIsPlaying;
+static volatile unsigned char bgmLaunchBlocked = 0;
 static unsigned char rdPtr, wrPtr;
 static char bgmBuffer[BGM_RING_BUFFER_COUNT][BGM_RING_BUFFER_SIZE];
 static volatile unsigned char bgmThreadRunning, bgmIoThreadRunning;
@@ -264,6 +236,7 @@ static u8 bgmThreadStack[BGM_THREAD_STACK_SIZE] __attribute__((aligned(16)));
 static u8 bgmIoThreadStack[BGM_THREAD_STACK_SIZE] __attribute__((aligned(16)));
 
 static OggVorbis_File *vorbisFile;
+static unsigned char *bgmFileBuffer = NULL;
 
 typedef struct
 {
@@ -394,56 +367,75 @@ static void bgmIoThread(void *arg)
 
 static int bgmLoad(void)
 {
-    FILE *bgmFile;
-    char bgmPath[256];
+    const char *candidates[5];
+    int count = 0;
+    int i, fd, size, bytesRead;
 
-    vorbisFile = malloc(sizeof(OggVorbis_File));
-    memset(vorbisFile, 0, sizeof(OggVorbis_File));
+    if (gDefaultBGMPath[0] != '\0')
+        candidates[count++] = gDefaultBGMPath;
+    candidates[count++] = "mc0:/OPL/DATA/bgm.ogg";
+    candidates[count++] = "mc1:/OPL/DATA/bgm.ogg";
+    candidates[count++] = "mc0:/OPL/bgm.ogg";
+    candidates[count++] = "mc1:/OPL/bgm.ogg";
 
-    int themeID = thmGetGuiValue();
-    if (themeID != 0) {
-        char *thmPath = thmGetFilePath(themeID);
-        snprintf(bgmPath, sizeof(bgmPath), "%ssound/bgm.ogg", thmPath);
-    } else
-        snprintf(bgmPath, sizeof(bgmPath), "%s", gDefaultBGMPath);
+    for (i = 0; i < count; i++) {
+        if (bgmLaunchBlocked)
+            return -ECANCELED;
 
-    bgmFile = fopen(bgmPath, "rb");
-    if (bgmFile == NULL) {
-        LOG("BGM: Failed to open Ogg file %s\n", bgmPath);
-        return -ENOENT;
-    }
+        fd = open(candidates[i], O_RDONLY);
+        if (fd < 0)
+            continue;
 
-    if (ov_open_callbacks(bgmFile, vorbisFile, NULL, 0, OV_CALLBACKS_DEFAULT) < 0) {
-        LOG("BGM: Input does not appear to be an Ogg bitstream.\n");
-        // Vorbisfile closes the file only once it has taken it
-        fclose(bgmFile);
-        return -ENOENT;
-    }
+        size = lseek(fd, 0, SEEK_END);
+        lseek(fd, 0L, SEEK_SET);
+        if (size <= 0 || size > BGM_MAX_FILE_SIZE) {
+            close(fd);
+            continue;
+        }
 
-    return 0;
-}
+        bgmFileBuffer = memalign(64, size);
+        if (bgmFileBuffer == NULL) {
+            close(fd);
+            return -ENOMEM;
+        }
 
-static int bgmLoadBuiltin(void)
-{
-    if (vorbisFile == NULL)
+        bytesRead = read(fd, bgmFileBuffer, size);
+        close(fd);
+
+        if (bytesRead != size) {
+            free(bgmFileBuffer);
+            bgmFileBuffer = NULL;
+            continue;
+        }
+
         vorbisFile = malloc(sizeof(OggVorbis_File));
-    if (vorbisFile == NULL)
-        return -ENOMEM;
+        if (vorbisFile == NULL) {
+            free(bgmFileBuffer);
+            bgmFileBuffer = NULL;
+            return -ENOMEM;
+        }
+        memset(vorbisFile, 0, sizeof(OggVorbis_File));
 
-    memset(vorbisFile, 0, sizeof(OggVorbis_File));
+        bgmMem.data = bgmFileBuffer;
+        bgmMem.size = (unsigned int)size;
+        bgmMem.pos = 0;
 
-    bgmMem.data = bgm_ogg;
-    bgmMem.size = size_bgm_ogg;
-    bgmMem.pos = 0;
+        ov_callbacks memCallbacks = {&bgmMemRead, &bgmMemSeek, &bgmMemClose, &bgmMemTell};
+        if (ov_open_callbacks(&bgmMem, vorbisFile, NULL, 0, memCallbacks) < 0) {
+            LOG("BGM: %s is not a valid Ogg bitstream.\n", candidates[i]);
+            free(vorbisFile);
+            vorbisFile = NULL;
+            free(bgmFileBuffer);
+            bgmFileBuffer = NULL;
+            continue;
+        }
 
-    ov_callbacks memCallbacks = {&bgmMemRead, &bgmMemSeek, &bgmMemClose, &bgmMemTell};
-
-    if (ov_open_callbacks(&bgmMem, vorbisFile, NULL, 0, memCallbacks) < 0) {
-        LOG("BGM: Built-in BGM is not a valid Ogg bitstream.\n");
-        return -ENOENT;
+        LOG("BGM: Loaded %s (%d bytes) into RAM.\n", candidates[i], size);
+        return 0;
     }
 
-    return 0;
+    LOG("BGM: No external bgm.ogg found.\n");
+    return -ENOENT;
 }
 
 static int bgmInit(void)
@@ -486,7 +478,6 @@ static int bgmInit(void)
     thread.attr = 0;
     thread.option = 0;
 
-    // BGM thread will start in DORMANT state.
     bgmThreadID = CreateThread(&thread);
 
     if (bgmThreadID >= 0) {
@@ -498,7 +489,6 @@ static int bgmInit(void)
         thread.attr = 0;
         thread.option = 0;
 
-        // BGM I/O thread will start in DORMANT state.
         bgmIoThreadID = CreateThread(&thread);
         if (bgmIoThreadID >= 0) {
             result = 0;
@@ -524,10 +514,16 @@ static void bgmDeinit(void)
     DeleteThread(bgmThreadID);
     DeleteThread(bgmIoThreadID);
 
-    // Vorbisfile takes care of fclose.
-    ov_clear(vorbisFile);
-    free(vorbisFile);
-    vorbisFile = NULL;
+    if (vorbisFile != NULL) {
+        ov_clear(vorbisFile);
+        free(vorbisFile);
+        vorbisFile = NULL;
+    }
+
+    if (bgmFileBuffer != NULL) {
+        free(bgmFileBuffer);
+        bgmFileBuffer = NULL;
+    }
 }
 
 static void bgmShutdownDelayCallback(s32 alarm_id, u16 time, void *common)
@@ -535,19 +531,33 @@ static void bgmShutdownDelayCallback(s32 alarm_id, u16 time, void *common)
     iWakeupThread((int)common);
 }
 
+void bgmSetBlocked(int blocked)
+{
+    bgmLaunchBlocked = blocked ? 1 : 0;
+}
+
 void bgmStart(void)
 {
     struct audsrv_fmt_t audsrvFmt;
 
-    if (!audio_initialized) {
-        LOG("BGM: %s: ERROR: not initialized!\n", __FUNCTION__);
+    if (!audio_initialized || bgmLaunchBlocked || !gEnableBGM)
+        return;
+
+    if (bgmStateSema >= 0)
+        WaitSema(bgmStateSema);
+
+    if (!audio_initialized || bgmIsPlaying || bgmLaunchBlocked || !gEnableBGM) {
+        if (bgmStateSema >= 0)
+            SignalSema(bgmStateSema);
         return;
     }
 
     int ret = bgmInit();
     if (ret >= 0) {
-        if (bgmLoad() != 0 && bgmLoadBuiltin() != 0) {
+        if (bgmLoad() != 0) {
             bgmDeinit();
+            if (bgmStateSema >= 0)
+                SignalSema(bgmStateSema);
             return;
         }
 
@@ -559,12 +569,29 @@ void bgmStart(void)
         audsrvFmt.bits = 16;
 
         audsrv_set_format(&audsrvFmt);
+        audsrv_set_volume(gBGMVolume);
 
         bgmIsPlaying = 1;
 
         StartThread(bgmIoThreadID, NULL);
         StartThread(bgmThreadID, NULL);
     }
+
+    if (bgmStateSema >= 0)
+        SignalSema(bgmStateSema);
+}
+
+static void bgmStartDeferred(void)
+{
+    bgmStart();
+}
+
+void bgmStartAsync(void)
+{
+    if (!audio_initialized || bgmLaunchBlocked || !gEnableBGM)
+        return;
+
+    ioPutRequest(IO_CUSTOM_SIMPLEACTION, &bgmStartDeferred);
 }
 
 void bgmStop(void)
@@ -573,6 +600,15 @@ void bgmStop(void)
 
     if (!audio_initialized) {
         LOG("BGM: %s: ERROR: not initialized!\n", __FUNCTION__);
+        return;
+    }
+
+    if (bgmStateSema >= 0)
+        WaitSema(bgmStateSema);
+
+    if (!bgmIsPlaying) {
+        if (bgmStateSema >= 0)
+            SignalSema(bgmStateSema);
         return;
     }
 
@@ -593,17 +629,17 @@ void bgmStop(void)
 
     bgmDeinit();
 
+    if (bgmStateSema >= 0)
+        SignalSema(bgmStateSema);
+
     LOG("BGM: stopped.\n");
 }
 
 int isBgmPlaying(void)
 {
-    int ret = (int)bgmIsPlaying;
-
-    return ret;
+    return (int)bgmIsPlaying;
 }
 
-// HACK: BGM stutters while perfroming certain tasks, mute during these operations and unmute once completed.
 void bgmMute(void)
 {
     if (audio_initialized)
@@ -622,6 +658,15 @@ void bgmUnMute(void)
 void audioInit(void)
 {
     if (!audio_initialized) {
+        if (bgmStateSema < 0) {
+            ee_sema_t sema;
+            sema.init_count = 1;
+            sema.max_count = 1;
+            sema.attr = 0;
+            sema.option = (u32) "bgm-state";
+            bgmStateSema = CreateSema(&sema);
+        }
+
         if (audsrv_init() != 0) {
             LOG("AUDIO: Failed to initialize audsrv\n");
             LOG("AUDIO: Audsrv returned error string: %s\n", audsrv_get_error_string());
@@ -638,11 +683,17 @@ void audioEnd(void)
         return;
     }
 
-    if (gEnableBGM && isBgmPlaying())
+    bgmSetBlocked(1);
+    if (isBgmPlaying())
         bgmStop();
 
     audsrv_quit();
     audio_initialized = 0;
+
+    if (bgmStateSema >= 0) {
+        DeleteSema(bgmStateSema);
+        bgmStateSema = -1;
+    }
 }
 
 void audioSetVolume(void)
