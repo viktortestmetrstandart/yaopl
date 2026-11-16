@@ -68,6 +68,11 @@ void guiInit();
 
 /** Clean-up the GUI */
 void guiEnd();
+void guiDrawEarlyLogo(void);
+void guiLoadCustomAssets(void);
+int guiHasCustomBg(void);
+void guiSetLaunchSplash(int active);
+void guiDrawLaunchSplashFrame(void);
 
 /** Locks gui for direct gui data updates */
 void guiLock();
