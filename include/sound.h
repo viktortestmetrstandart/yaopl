@@ -23,7 +23,9 @@ int sfxGetSoundDuration(int id);
 void sfxPlay(int id);
 
 void bgmStart(void);
+void bgmStartAsync(void);
 void bgmStop(void);
+void bgmSetBlocked(int blocked);
 int isBgmPlaying(void);
 void bgmMute(void);
 void bgmUnMute(void);
