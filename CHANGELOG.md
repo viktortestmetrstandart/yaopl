@@ -4,6 +4,8 @@ What changed in YAOPL (Yet Another Open PS2 Loader), newest first; below it, wha
 Loader (OPL) before the fork.
 
 ## Unreleased
+- Localization and Branding: Replace built-in splash logo, add Ukrainian as built-in default language with
+  Cyrillic-capable default font, and set default BGM volume to 95.
 - Defaults: Enable BDM (USB + UDPBD), cover/disc art, static network settings (192.168.1.10, 100M FDX) and
   embedded default BGM by default; disable the info page in the built-in theme.
 - GUI: A cover or theme image far larger than the menu can show (over 1024 pixels wide or high) is refused
