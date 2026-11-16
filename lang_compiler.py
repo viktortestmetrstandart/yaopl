@@ -72,7 +72,7 @@ def make_source(base_obj: Dict[str, Any], output_file: TextIOWrapper) -> None:
     for string_def in base_obj['gui_strings']:
         string = string_def['string']
         # We use JSON to quote the string because JSON strings are equivalent to C strings
-        output_file.write(f'{TAB}{json.dumps(string)},\n')
+        output_file.write(f'{TAB}{json.dumps(string, ensure_ascii=False)},\n')
 
     output_file.write(CURLY_BRACE_END)
 
