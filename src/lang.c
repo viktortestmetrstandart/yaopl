@@ -226,6 +226,7 @@ void lngInit(void)
     fntInit();
 
     lngAddLanguages(gBaseMCDir, "/", -1);
+    lngAddLanguages("mc?:OPL/DATA", "/", -1);
 }
 
 void lngEnd(void)
