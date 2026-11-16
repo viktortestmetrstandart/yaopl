@@ -338,13 +338,6 @@ static int bdmNeedsUpdate(item_list_t *itemList)
     if (!sbIsSameSize(pDeviceData->bdmPrefix, pDeviceData->bdmULSizePrev))
         result = 1;
 
-    // update Themes
-    if (!pDeviceData->ThemesLoaded) {
-        sprintf(path, "%sTHM", pDeviceData->bdmPrefix);
-        if (thmAddElements(path, "/", 1) > 0)
-            pDeviceData->ThemesLoaded = 1;
-    }
-
     // update Languages
     if (!pDeviceData->LanguagesLoaded) {
         sprintf(path, "%sLNG", pDeviceData->bdmPrefix);
