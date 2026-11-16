@@ -42,708 +42,708 @@ string_array_specifiers: ''
 gui_strings:
 - comment: Localized language name
   label: LOCALE
-  string: English (internal)
+  string: Українська (вбудована)
 - label: SAVE_CHANGES
-  string: Save Changes
+  string: Зберегти зміни
 - label: BACK
-  string: Back
+  string: Назад
 - label: NETCONFIG
-  string: Network Settings
+  string: Налаштування мережі
 - label: SHOW_ADVANCED_OPTS
-  string: Advanced Options
+  string: Додаткові параметри
 - label: NO_ITEMS
-  string: <no values>
+  string: <немає значень>
 - label: SETTINGS_SAVED
-  string: Settings saved to %s
+  string: Налаштування збережено до %s
 - label: ERROR_SAVING_SETTINGS
-  string: Error writing settings!
+  string: Помилка запису налаштувань!
 - label: EXIT
-  string: Exit
+  string: Вихід
 - label: SETTINGS
-  string: Settings
+  string: Налаштування
 - label: MENU
-  string: Menu
+  string: Меню
 - label: BDM_GAMES
-  string: BDM Games
+  string: Ігри BDM
 - label: HDD_GAMES
-  string: HDD Games
+  string: Ігри HDD
 - label: NET_GAMES
-  string: ETH Games
+  string: Ігри ETH
 - label: APPS
-  string: Apps
+  string: Програми
 - label: THEME
-  string: Theme
+  string: Тема
 - label: LANGUAGE
-  string: Language
+  string: Мова
 - label: CONFIRMATION_POFF
-  string: The system will be powered off.
+  string: Консоль буде вимкнено.
 - label: CONFIRMATION_EXIT
-  string: Exit to Browser?
+  string: Вийти до браузера?
 - label: CONFIRMATION_CANCEL_UPDATE
-  string: Cancel updating?
+  string: Скасувати оновлення?
 - label: HDD_NOT_CONNECTED_ERROR
-  string: '%d: HardDisk Drive not detected.'
+  string: '%d: Жорсткий диск не виявлено.'
 - label: HDD_NOT_FORMATTED_ERROR
-  string: '%d: HardDisk Drive not formatted.'
+  string: '%d: Жорсткий диск не відформатовано.'
 - comment: Generic network error message.
   label: NETWORK_STARTUP_ERROR
-  string: '%d: Network startup error.'
+  string: '%d: Помилка запуску мережі.'
 - label: NETWORK_STARTUP_ERROR_NETIF
-  string: '%d: No network adaptor detected.'
+  string: '%d: Мережевий адаптер не виявлено.'
 - label: NETWORK_STARTUP_ERROR_CONN
-  string: '%d: Cannot connect to SMB server.'
+  string: '%d: Не вдалося підключитися до SMB-сервера.'
 - label: NETWORK_STARTUP_ERROR_LOGON
-  string: '%d: Cannot log into SMB server.'
+  string: '%d: Помилка входу на SMB-сервер.'
 - label: NETWORK_STARTUP_ERROR_SHARE
-  string: '%d: Cannot open SMB share.'
+  string: '%d: Не вдалося відкрити папку SMB.'
 - label: NETWORK_SHARE_LIST_ERROR
-  string: '%d: Cannot list SMB shares.'
+  string: '%d: Не вдалося отримати список папок SMB.'
 - label: NETWORK_GAMES_LIST_ERROR
-  string: '%d: Cannot list games.'
+  string: '%d: Не вдалося отримати список ігор.'
 - label: NETWORK_ERROR_DHCP_FAIL
-  string: '%d: DHCP server unavailable.'
+  string: '%d: DHCP-сервер недоступний.'
 - label: NETWORK_ERROR_LINK_FAIL
-  string: '%d: No network connection.'
+  string: "%d: Немає мережевого з'єднання."
 - label: 'ON'
-  string: 'On'
+  string: 'Увімк.'
 - label: 'OFF'
-  string: 'Off'
+  string: 'Вимк.'
 - label: OK
   string: OK
 - label: SELECT
-  string: Select
+  string: Вибір
 - label: CANCEL
-  string: Cancel
+  string: Скасувати
 - label: CIRCLE
-  string: Circle
+  string: Коло
 - label: CROSS
-  string: Cross
+  string: Хрестик
 - label: GAMES_LIST
-  string: Games List
+  string: Список ігор
 - label: COMPAT_SETTINGS
-  string: Game Settings
+  string: Налаштування гри
 - label: REMOVE_ALL_SETTINGS
-  string: Remove Settings
+  string: Видалити налаштування
 - label: SCROLLING
-  string: Scrolling Speed
+  string: Швидкість прокрутки
 - label: SLOW
-  string: Slow
+  string: Повільно
 - label: MEDIUM
-  string: Medium
+  string: Середньо
 - label: FAST
-  string: Fast
+  string: Швидко
 - label: DEFDEVICE
-  string: Default Menu
+  string: Меню за замовчуванням
 - label: LOAD_FROM_DISC
-  string: Load From Disc
+  string: Зчитати з диска
 - label: PLEASE_WAIT
-  string: Please wait.
+  string: Будь ласка, зачекайте.
 - label: ERROR_LOADING_ID
-  string: Error while loading the Game ID.
+  string: Помилка зчитування ID гри.
 - label: AUTOSORT
-  string: Automatic Sorting
+  string: Автосортування
 - label: ERR_LOADING_LANGFILE
-  string: Error loading the language file.
+  string: Помилка завантаження мовного файлу.
 - label: DEBUG
-  string: Debug Colors
+  string: Кольори відладки
 - label: NO_CONTROLLER
-  string: No controller detected, waiting...
+  string: Геймпад не виявлено, очікування...
 - label: COVERART
-  string: Cover Art
+  string: Обкладинки
 - label: WIDE_SCREEN
-  string: Widescreen
+  string: Широкий екран (16:9)
 - label: POWEROFF
-  string: Power Off
+  string: Вимкнути консоль
 - label: LOADING_SETTINGS
-  string: Loading config...
+  string: Завантаження конфігурації...
 - label: SAVING_SETTINGS
-  string: Saving config...
+  string: Збереження конфігурації...
 - label: START_DEVICE
-  string: Start Device
+  string: Запустити пристрій
 - label: REFRESH
-  string: Refresh
+  string: Оновити
 - label: BDMMODE
-  string: BDM Start Mode
+  string: Режим запуску BDM
 - label: HDDMODE
-  string: HDD (APA) Start Mode
+  string: Режим запуску HDD (APA)
 - label: ETHMODE
-  string: ETH Start Mode
+  string: Режим запуску ETH
 - label: APPMODE
-  string: Applications Start Mode
+  string: Режим запуску програм
 - label: AUTO
-  string: Auto
+  string: Авто
 - label: MANUAL
-  string: Manual
+  string: Вручну
 - label: STARTNBD
-  string: Start NBD Server
+  string: Запустити NBD-сервер
 - label: STARTINGNBD
-  string: NBD Server starting...
+  string: Запуск NBD-сервера...
 - label: RUNNINGNBD
-  string: NBD Server running...
+  string: NBD-сервер працює...
 - label: STARTFAILNBD
-  string: Failed to start NBD Server.
+  string: Не вдалося запустити NBD-сервер.
 - label: UNLOADNBD
-  string: NBD Server unloading...
+  string: Зупинка NBD-сервера...
 - label: EXITTO
-  string: IGR Path
+  string: Шлях виходу (IGR)
 - label: BGCOLOR
-  string: Background Color
+  string: Колір фону
 - label: TXTCOLOR
-  string: Text Color
+  string: Колір тексту
 - label: CAT_SMB_SERVER
-  string: '- SMB Server -'
+  string: '- SMB-сервер -'
 - label: IP_ADDRESS_TYPE
-  string: IP Address Type
+  string: Тип IP-адреси
 - label: IP_ADDRESS_TYPE_STATIC
-  string: Static
+  string: Статична
 - label: IP_ADDRESS_TYPE_DHCP
   string: DHCP
 - label: IP_ADDRESS
-  string: IP Address
+  string: IP-адреса
 - label: ADDRESS
-  string: Address
+  string: Адреса
 - label: MASK
-  string: Mask
+  string: Маска
 - label: GATEWAY
-  string: Gateway
+  string: Шлюз
 - label: DNS_SERVER
-  string: DNS Server
+  string: DNS-сервер
 - label: PORT
-  string: Port
+  string: Порт
 - label: SHARE
-  string: Share
+  string: Папка (Share)
 - label: USER
-  string: User
+  string: Користувач
 - label: PASSWORD
-  string: Password
+  string: Пароль
 - label: NOT_SET
-  string: <not set>
+  string: <не задано>
 - label: ADDRESS_TYPE
-  string: Address Type
+  string: Тип адреси
 - label: ADDR_TYPE_IP
   string: IP
 - label: ADDR_TYPE_NETBIOS
   string: NetBIOS
 - label: ACCEPT
-  string: Accept
+  string: Прийняти
 - label: DELETE_WARNING
-  string: Item will be permanently deleted, continue?
+  string: Елемент буде остаточно видалено, продовжити?
 - label: RENAME
-  string: Rename
+  string: Перейменувати
 - label: DELETE
-  string: Delete
+  string: Видалити
 - label: RUN
-  string: Run
+  string: Грати
 - label: GFX_SETTINGS
-  string: Display Settings
+  string: Налаштування екрана
 - label: ENABLE_WRITE
-  string: Write Operations
+  string: Операції запису
 - label: LASTPLAYED
-  string: Remember Last Played Game
+  string: Запам'ятовувати останню гру
 - label: SELECTBUTTON
-  string: Select Button
+  string: Кнопка вибору
 - label: ERR_FRAGMENTED
-  string: Error, the game is fragmented.
+  string: Помилка, гра фрагментована.
 - label: ERR_FILE_INVALID
-  string: Error, could not run the item.
+  string: Помилка, не вдалося запустити.
 - label: TEST
-  string: Test Changes
+  string: Перевірити зміни
 - label: HINT_GUEST
-  string: Leave empty for GUEST auth.
+  string: Залиште порожнім для гостьового входу.
 - label: HINT_MODE1
-  string: Accurate Reads
+  string: Точне зчитування
 - label: HINT_MODE2
-  string: Synchronous Mode
+  string: Синхронний режим
 - label: HINT_MODE3
-  string: Unhook Syscalls
+  string: Відключити перехоплення Syscalls
 - label: HINT_MODE4
-  string: Skip Videos
+  string: Пропуск відеороликів
 - label: HINT_MODE5
-  string: Emulate DVD-DL
+  string: Емуляція DVD-DL
 - label: HINT_MODE6
-  string: Disable IGR
+  string: Вимкнути IGR
 - label: HINT_VMC_SIZE
-  string: Changing the size will reformat the VMC.
+  string: Зміна розміру відформатує VMC.
 - label: CREATE
-  string: Create
+  string: Створити
 - label: START
-  string: Start
+  string: Почати
 - label: MODIFY
-  string: Modify
+  string: Змінити
 - label: ABORT
-  string: Abort
+  string: Перервати
 - label: RESET
-  string: Reset
+  string: Скинути
 - label: USE_GENERIC
-  string: Use Generic
+  string: Загальна VMC
 - label: VMC_SCREEN
-  string: Configure VMC
+  string: Налаштування VMC
 - label: VMC_NAME
-  string: Name
+  string: Назва
 - label: SIZE
-  string: Size
+  string: Розмір
 - label: VMC_STATUS
-  string: Status
+  string: Статус
 - label: VMC_PROGRESS
-  string: Progress
+  string: Прогрес
 - label: VMC_FILE_EXISTS
-  string: VMC file exists.
+  string: Файл VMC вже існує.
 - label: VMC_FILE_ERROR
-  string: Invalid VMC file, size is incorrect.
+  string: Невірний файл VMC, некоректний розмір.
 - label: VMC_FILE_NEW
-  string: VMC file needs to be created.
+  string: Потрібно створити файл VMC.
 - label: ERR_VMC_CONTINUE
-  string: Error accessing VMC %s. Continue with the Memory Card in slot %d?
+  string: "Помилка доступу до VMC %s. Продовжити з картою пам'яті у слоті %d?"
 - label: AUTOREFRESH
-  string: Automatic Refresh
+  string: Автооновлення списку
 - label: ABOUT
-  string: About
+  string: Про програму
 - label: DEVS
-  string: Coders
+  string: Розробники
 - label: QANDA
-  string: Quality Assurance
+  string: Тестування
 - label: BDM_PREFIX
-  string: BDM Prefix Path
+  string: Префікс шляху BDM
 - label: HINT_EXITPATH
-  string: Boots custom ELF after an IGR.
+  string: Запускає вказаний ELF після IGR.
 - label: HINT_SPINDOWN
-  string: Value in minute(s), 0 to disable spin down.
+  string: Значення у хвилинах, 0 щоб вимкнути зупинку.
 - label: HDD_SPINDOWN
-  string: Automatic HDD Spin Down
+  string: Автовимкнення HDD
 - label: VMODE
-  string: Video Mode
+  string: Відеорежим
 - label: UICOLOR
-  string: Dialog Color
+  string: Колір інтерфейсу
 - label: SELCOLOR
-  string: Selected Color
+  string: Колір виділення
 - label: RESETCOLOR
-  string: Reset Colors
+  string: Скинути кольори
 - label: INFO
-  string: Info
+  string: Інформація
 - label: ALTSTARTUP
-  string: Custom ELF
+  string: Інший ELF
 - label: COLOR_SELECTION
-  string: Color Selection
+  string: Вибір кольору
 - label: RECONNECT
-  string: Reconnect
+  string: Перепідключити
 - label: HINT_SHARENAME
-  string: Leave empty to list shares.
+  string: Залиште порожнім для показу списку папок.
 - label: ETH_PREFIX
-  string: ETH Prefix Path
+  string: Префікс шляху ETH
 - label: BACKSPACE
-  string: Backspace
+  string: Витерти
 - label: SPACE
-  string: Space
+  string: Пробіл
 - label: ENTER
-  string: Enter
+  string: Ввід
 - label: MODE
-  string: Mode
+  string: Режим
 - label: VMC_SLOT1
-  string: VMC Slot 1
+  string: VMC Слот 1
 - label: VMC_SLOT2
-  string: VMC Slot 2
+  string: VMC Слот 2
 - label: GAME_ID
-  string: Game ID
+  string: ID гри
 - label: DMA_MODE
-  string: DMA Mode
+  string: Режим DMA
 - label: VSYNC
   string: V-Sync
 - label: MODE1
-  string: Mode 1
+  string: Режим 1
 - label: MODE2
-  string: Mode 2
+  string: Режим 2
 - label: MODE3
-  string: Mode 3
+  string: Режим 3
 - label: MODE4
-  string: Mode 4
+  string: Режим 4
 - label: MODE5
-  string: Mode 5
+  string: Режим 5
 - label: MODE6
-  string: Mode 6
+  string: Режим 6
 - label: GSCONFIG
-  string: Configure GSM
+  string: Налаштувати GSM
 - label: ETH_OPMODE
-  string: Ethernet Link Mode
+  string: Режим Ethernet
 - label: ETH_100MFDX
-  string: 100Mbit Full-duplex
+  string: 100 Мбіт/с Full-duplex
 - label: ETH_100MHDX
-  string: 100Mbit Half-duplex
+  string: 100 Мбіт/с Half-duplex
 - label: ETH_10MFDX
-  string: 10Mbit Full-duplex
+  string: 10 Мбіт/с Full-duplex
 - label: ETH_10MHDX
-  string: 10Mbit Half-duplex
+  string: 10 Мбіт/с Half-duplex
 - label: GSM_SETTINGS
-  string: GSM Settings
+  string: Налаштування GSM
 - label: ENABLEGSM
-  string: GSM Selector
+  string: Перемикач GSM
 - label: HINT_ENABLEGSM
-  string: Toggles GSM on/off.
+  string: Вмикає або вимикає GSM.
 - label: HINT_GSMVMODE
-  string: Forced custom display mode.
+  string: Примусовий відеорежим.
 - label: XOFFSET
-  string: H-POS
+  string: Зміщення X
 - label: HINT_XOFFSET
-  string: Horizontal adjustment.
+  string: Горизонтальне зміщення.
 - label: YOFFSET
-  string: V-POS
+  string: Зміщення Y
 - label: HINT_YOFFSET
-  string: Vertical adjustment.
+  string: Вертикальне зміщення.
 - label: OVERSCAN
   string: Overscan
 - label: HINT_OVERSCAN
-  string: Overscan adjustment.
+  string: Налаштування меж екрана.
 - label: GSMSKIPVIDEOS
-  string: FMV Skip
+  string: Пропуск FMV
 - label: HINT_GSMSKIPVIDEOS
-  string: Skips full motion videos.
+  string: Пропускає відеоролики в грі.
 - label: CHEAT_SETTINGS
-  string: Cheat Settings
+  string: Налаштування чітів
 - label: ENABLECHEAT
-  string: PS2RD Cheat Engine
+  string: Чіт-рушій PS2RD
 - label: HINT_ENABLECHEAT
-  string: Lets PS2RD Cheat Engine patch your game.
+  string: Дозволяє PS2RD застосовувати чіт-коди у грі.
 - label: CHEATMODE
-  string: PS2RD Cheat Engine Mode
+  string: Режим PS2RD
 - label: HINT_CHEATMODE
-  string: Auto select or select game cheats.
+  string: Автовибір або ручний вибір чітів.
 - label: CHEATMODEAUTO
-  string: Auto Select Cheats
+  string: Автовибір чітів
 - label: CHEATMODESELECT
-  string: Select Game Cheats
+  string: Обрати чіти для гри
 - label: ERR_CHEATS_LOAD_FAILED
-  string: 'Error: failed to load cheat file.'
+  string: 'Помилка: не вдалося завантажити файл чітів.'
 - label: NO_CHEATS_FOUND
-  string: No cheats found.
+  string: Чітів не знайдено.
 - label: DL_DEFAULTS
-  string: Download Defaults
+  string: Завантажити налаштування
 - label: NET_UPDATE
-  string: Network Update
+  string: Мережеве оновлення
 - label: NET_UPDATE_ALL
-  string: Overwrite Existing Records
+  string: Перезаписати існуючі записи
 - label: NET_UPDATE_FAILED
-  string: Update failed.
+  string: Помилка оновлення.
 - label: NET_UPDATE_CONN_FAILED
-  string: Failed to connect to update server.
+  string: Не вдалося з'єднатися з сервером оновлень.
 - label: NET_UPDATE_DONE
-  string: Update completed.
+  string: Оновлення завершено.
 - label: NET_UPDATE_CANCELLED
-  string: Update cancelled.
+  string: Оновлення скасовано.
 - label: CONFIRMATION_SETTINGS_UPDATE
-  string: Download settings from the network?
+  string: Завантажити налаштування з мережі?
 - label: CUSTOMIZED_SETTINGS
-  string: Customized Settings
+  string: Власні налаштування
 - label: DOWNLOADED_DEFAULTS
-  string: Downloaded Defaults
+  string: Завантажені налаштування
 - label: AUTO_START_IN_N_SECS
-  string: Auto start in %i s...
+  string: Автозапуск через %i с...
 - label: AUTOSTARTLAST
-  string: Auto Start
+  string: Автозапуск
 - label: HINT_AUTOSTARTLAST
-  string: Value in second(s), 0 to disable auto start.
+  string: Значення у секундах, 0 щоб вимкнути автозапуск.
 - label: PS2LOGO
-  string: PS2 Logo
+  string: Логотип PS2
 - label: HINT_PS2LOGO
-  string: Displayed for a valid disc logo matching the console's region.
+  string: Показує логотип для дисків регіону консолі.
 - label: PADEMUCONFIG
-  string: Configure PADEMU
+  string: Налаштувати PADEMU
 - label: PADEMU_SETTINGS
-  string: Pad Emulator Settings
+  string: Налаштування емуляції геймпада
 - label: PADEMU_ENABLE
-  string: Pad Emulator
+  string: Емулятор геймпада
 - label: HINT_PADEMU_ENABLE
-  string: Turns on/off Pad Emulator for selected game.
+  string: Вмикає або вимикає емулятор геймпада для гри.
 - label: PADEMU_MODE
-  string: Pad Emulator Mode
+  string: Режим емулятора
 - label: HINT_PADEMU_MODE
-  string: Select Pad Emulator mode.
+  string: Оберіть режим емулятора геймпада.
 - label: DS34USB_MODE
-  string: DualShock3/4 USB
+  string: DualShock 3/4 USB
 - label: DS34BT_MODE
-  string: DualShock3/4 BT
+  string: DualShock 3/4 BT
 - label: PADPORT
-  string: 'Settings For Port:'
+  string: 'Налаштування для порту:'
 - label: HINT_PAD_PORT
-  string: Select Pad Emulator port for settings.
+  string: Оберіть порт для налаштування емулятора.
 - label: PADEMU_PORT
-  string: Emulation
+  string: Емуляція
 - label: HINT_PADEMU_PORT
-  string: Turns on/off Pad Emulator for selected port.
+  string: Вмикає або вимикає емуляцію для обраного порту.
 - label: PADEMU_VIB
-  string: Vibration
+  string: Вібрація
 - label: HINT_PADEMU_VIB
-  string: Turns on/off vibration for Pad Emulator selected port.
+  string: Вмикає або вимикає вібрацію для обраного порту.
 - label: USBDG_MAC
-  string: 'USB Bluetooth Adapter MAC Address:'
+  string: 'MAC-адреса Bluetooth-адаптера:'
 - label: PAD_MAC
-  string: 'DS Controller Paired To MAC Address:'
+  string: 'Геймпад прив''язано до MAC:'
 - label: PAIR
-  string: Pair
+  string: Прив'язати
 - label: PAIR_PAD
-  string: Pair DS Controller
+  string: Прив'язати геймпад DS
 - label: HINT_PAIRPAD
-  string: Pair DS controller with Bluetooth adapter MAC address.
+  string: Прив'язати DualShock до MAC-адреси Bluetooth-адаптера.
 - label: NOT_CONNECTED
-  string: Not Connected
+  string: Не підключено
 - label: BTINFO
-  string: Bluetooth Adapter Information
+  string: Інформація про Bluetooth-адаптер
 - label: HINT_BTINFO
-  string: Shows more information and supported features.
+  string: Показує деталі та підтримувані функції.
 - label: HCIVER
-  string: 'HCI Version:'
+  string: 'Версія HCI:'
 - label: LMPVER
-  string: 'LMP Version:'
+  string: 'Версія LMP:'
 - label: MANUFACTURER
-  string: 'Manufacturer ID:'
+  string: 'ID виробника:'
 - label: SUPFEATURES
-  string: 'Supported Features:'
+  string: 'Підтримувані функції:'
 - label: 'YES'
-  string: 'Yes'
+  string: 'Так'
 - label: 'NO'
-  string: 'No'
+  string: 'Ні'
 - label: BT_SUPPORTED
-  string: Bluetooth adapter should be fully compatible with DS3/DS4 controllers.
+  string: Bluetooth-адаптер повністю сумісний із DualShock 3/4.
 - label: BT_NOTSUPPORTED
-  string: Bluetooth adapter may not work correctly with DS3/DS4 controllers.
+  string: Bluetooth-адаптер може працювати некоректно з DualShock 3/4.
 - label: MTAP_ENABLE
-  string: Multitap Emulation
+  string: Емуляція Multitap
 - label: HINT_MTAP_ENABLE
-  string: Turns on/off Multitap emulation for selected game.
+  string: Вмикає або вимикає емуляцію Multitap для гри.
 - label: MTAP_PORT
-  string: 'Multitap Emulator On Port:'
+  string: 'Порт емулятора Multitap:'
 - label: HINT_MTAP_PORT
-  string: Select port for Multitap emulation.
+  string: Оберіть порт для емуляції Multitap.
 - label: PADEMU_WORKAROUND
-  string: Fake DS3 Workaround
+  string: Обхід для копій DS3
 - label: HINT_PADEMU_WORKAROUND
-  string: Some fake DS3s need a workaround, this option will enable it.
+  string: Вмикає сумісність для неоригінальних контролерів DS3.
 - label: GSM_FIELD_FIX
-  string: Emulate FIELD Flipping
+  string: Емуляція FIELD Flipping
 - label: HINT_GSM_FIELD_FIX
-  string: Fix for games that glitch under progressive video modes.
+  string: Фікс для ігор з мерехтінням у прогресивних режимах.
 - label: PARENLOCKCONFIG
-  string: Parental Lock Settings
+  string: Батьківський контроль
 - label: PARENLOCK_PASSWORD
-  string: Parental Lock Password
+  string: Пароль батьківського контролю
 - label: PARENLOCK_PASSWORD_HINT
-  string: Leave blank to disable the parental lock.
+  string: Залиште порожнім, щоб вимкнути захист.
 - label: PARENLOCK_ENTER_PASSWORD_TITLE
-  string: Enter Parental Lock Password
+  string: Введіть пароль батьківського контролю
 - label: PARENLOCK_PASSWORD_INCORRECT
-  string: Parental lock password incorrect.
+  string: Невірний пароль батьківського контролю.
 - label: PARENLOCK_DISABLE_WARNING
-  string: Parental lock disabled.
+  string: Батьківський контроль вимкнено.
 - label: BUILD_DETAILS
-  string: 'Build Options:'
+  string: 'Параметри збірки:'
 - label: PARENLOCK_INVALID_PASSWORD
-  string: Error - this password cannot be used.
+  string: Помилка - цей пароль не можна використовувати.
 - label: ERR_VMC_FRAGMENTED_CONTINUE
-  string: VMC %s file is fragmented. Continue with Memory Card in slot %d?
+  string: "Файл VMC %s фрагментовано. Продовжити з картою пам'яті у слоті %d?"
 - label: AUDIO_SETTINGS
-  string: Audio Settings
+  string: Налаштування звуку
 - label: SFX
-  string: Sound Effects
+  string: Звукові ефекти
 - label: BOOT_SND
-  string: Boot Sound
+  string: Звук запуску
 - label: SFX_VOLUME
-  string: Sound Effects Volume
+  string: Гучність ефектів
 - label: BOOT_SND_VOLUME
-  string: Boot Sound Volume
+  string: Гучність звуку запуску
 - label: CFM_VMODE_CHG
-  string: Confirm video mode change?
+  string: Підтвердити зміну відеорежиму?
 - label: CACHE_HDD_GAME_LIST
-  string: Cache Game List (HDD)
+  string: Кешувати список ігор (HDD)
 - label: ENABLE_NOTIFICATIONS
-  string: Notifications
+  string: Сповіщення
 - label: CFG_NOTIFICATION
-  string: Config loaded from %s
+  string: Конфігурацію завантажено з %s
 - label: THM_NOTIFICATION
-  string: Theme loaded from %s
+  string: Тему завантажено з %s
 - label: LNG_NOTIFICATION
-  string: Language loaded from %s
+  string: Мову завантажено з %s
 - label: PARTITION_NOTIFICATION
-  string: '%s partition mounted.'
+  string: Розділ %s підключено.
 - label: OPTIONS
-  string: Options
+  string: Опції
 - label: GAME_SETTINGS_SAVED
-  string: Game settings saved.
+  string: Налаштування гри збережено.
 - label: GAME_SETTINGS_REMOVED
-  string: '%s settings removed.'
+  string: Налаштування (%s) видалено.
 - label: NET_UPDATE_HINT
-  string: Overwrites existing game compatibility settings when enabled.
+  string: Перезаписує існуючі налаштування сумісності ігор.
 - label: SETTINGS_SOURCE
-  string: Settings Mode
+  string: Режим налаштувань
 - label: GLOBAL_SETTINGS
-  string: Global
+  string: Глобальні
 - label: PERGAME_SETTINGS
-  string: Per Game
+  string: Для гри
 - label: ALL_SETTINGS
-  string: All
+  string: Усі
 - label: GAME_SETTINGS_PROMPT
-  string: Select settings to remove.
+  string: Оберіть налаштування для видалення.
 - label: FORUM_DETAILS
-  string: 'Support Forums:'
+  string: 'Форуми підтримки:'
 - label: INFO_TITLE
-  string: Title
+  string: Назва
 - label: INFO_GENRE
-  string: Genre
+  string: Жанр
 - label: INFO_RELEASE
-  string: Release
+  string: Рік виходу
 - label: INFO_DEVELOPER
-  string: Developer
+  string: Розробник
 - label: INFO_DESCRIPTION
-  string: Description
+  string: Опис
 - label: BLOCKDEVICE_SETTINGS
-  string: BDM Devices
+  string: Пристрої BDM
 - label: CONTROLLER_SETTINGS
-  string: Controller Settings
+  string: Налаштування геймпада
 - label: HINT_BDM_START
-  string: Turn on/off Block Device Manager.
+  string: Вмикає або вимикає Block Device Manager.
 - label: HINT_BLOCK_DEVICES
-  string: Turn on/off BDM Devices (USB/MX4SIO/ILINK/HDD).
+  string: Вмикає або вимикає пристрої BDM (USB/MX4SIO/iLink/HDD/UDPBD).
 - label: USB_GAMES
-  string: USB Games
+  string: Ігри USB
 - label: ILINK_GAMES
-  string: iLink Games
+  string: Ігри iLink
 - label: MX4SIO_GAMES
-  string: MX4SIO Games
+  string: Ігри MX4SIO
 - label: PADMACROCONFIG
-  string: Configure PADMACRO
+  string: Налаштувати PADMACRO
 - label: PADMACRO_SETTINGS
-  string: Pad Macro Settings
+  string: Налаштування макросів
 - label: PADMACRO_ENABLE
-  string: Pad macros
+  string: Макроси геймпада
 - label: PADMACRO_SLOWDOWN
-  string: 'Analog Slow-Down:'
+  string: 'Сповільнення стіка:'
 - label: HINT_PADMACRO_SLOWDOWN_AXIS
-  string: Reduce the range of analog stick when button is pressed.
+  string: Зменшує чутливість стіка при затиснутій кнопці.
 - label: LEFT_ANALOG
-  string: Left Stick
+  string: Лівий стік
 - label: RIGHT_ANALOG
-  string: Right Stick
+  string: Правий стік
 - label: PADMACRO_INVERT_AXIS
-  string: 'Analog Axis Invert:'
+  string: 'Інверсія осей стіка:'
 - label: HINT_PADMACRO_INVERT_AXIS
-  string: Inverts the axis of selected analog stick.
+  string: Інвертує вісь обраного аналогового стіка.
 - label: TURBO_SPEED
-  string: Turbo Button Speed
+  string: Швидкість турбо-кнопки
 - label: HINT_TURBO_SPEED
-  string: How fast the button is pressed when turbo is active.
+  string: Частота натискань при активному турбо-режимі.
 - label: ACT_WHILE_PRESSED
-  string: While Button Pressed
+  string: Поки кнопка затиснута
 - label: ACT_TOGGLED
-  string: Toggled By Button
+  string: Перемикання кнопкою
 - label: LANGUAGE_JAPANESE
-  string: JAPANESE
+  string: ЯПОНСЬКА
 - label: LANGUAGE_ENGLISH
-  string: ENGLISH
+  string: АНГЛІЙСЬКА
 - label: LANGUAGE_FRENCH
-  string: FRENCH
+  string: ФРАНЦУЗЬКА
 - label: LANGUAGE_SPANISH
-  string: SPANISH
+  string: ІСПАНСЬКА
 - label: LANGUAGE_GERMAN
-  string: GERMAN
+  string: НІМЕЦЬКА
 - label: LANGUAGE_ITALIAN
-  string: ITALIAN
+  string: ІТАЛІЙСЬКА
 - label: LANGUAGE_DUTCH
-  string: DUTCH
+  string: НІДЕРЛАНДСЬКА
 - label: LANGUAGE_PORTUGUESE
-  string: PORTUGUESE
+  string: ПОРТУГАЛЬСЬКА
 - label: LANGUAGE_RUSSIAN
-  string: RUSSIAN
+  string: РОСІЙСЬКА
 - label: LANGUAGE_KOREAN
-  string: KOREAN
+  string: КОРЕЙСЬКА
 - label: LANGUAGE_TRAD_CHINESE
-  string: TRADITIONAL CHINESE
+  string: ТРАДИЦІЙНА КИТАЙСЬКА
 - label: LANGUAGE_SIMPL_CHINESE
-  string: SIMPLIFIED CHINESE
+  string: СПРОЩЕНА КИТАЙСЬКА
 - label: OSD_SETTINGS
-  string: OSD Settings
+  string: Налаштування OSD
 - label: OSD_SETTINGS_LNG
-  string: OSD Language
+  string: Мова OSD
 - label: HINT_OSD_SETTINGS_LNG
-  string: Force a custom language configuration
+  string: Примусовий вибір мови консолі
 - label: ENABLE_LNG
-  string: Enable
+  string: Увімкнути
 - label: OSD_SETTINGS_TVASPECT
-  string: Screen Size
+  string: Формат екрана
 - label: FULL_SCREEN
-  string: Full Screen
+  string: Повний екран
 - label: OSD_SETTINGS_VMODE
-  string: Video Mode
+  string: Відеорежим
 - label: SYSTEM_DEFAULT
-  string: System Default
+  string: Системний
 - label: BGM
-  string: Background Music
+  string: Фонова музика
 - label: BGM_VOLUME
-  string: Background Music Volume
+  string: Гучність музики
 - label: DEF_BGM_PATH
-  string: Default Theme Music
+  string: Шлях до музики
 - label: DEF_BGM_PATH_HINT
-  string: Set path to stream music for internal theme.
+  string: Шлях до власного Ogg-треку для стандартної теми.
 - label: HIGH
-  string: High
+  string: Висока
 - label: LOW
-  string: Low
+  string: Низька
 - label: XSENSITIVITY
-  string: Analog X-Axis Sensitivity
+  string: Чутливість аналога по X
 - label: YSENSITIVITY
-  string: Analog Y-Axis Sensitivity
+  string: Чутливість аналога по Y
 - label: FILE_COUNT
-  string: 'Files found: %i'
+  string: 'Знайдено файлів: %i'
 - label: CHEAT_SELECTION
-  string: Cheat Selection
+  string: Вибір чітів
 - label: HDD_HINT
-  string: Only one HDD allowed, enabling locks APA or GPT.
+  string: Дозволено лише один HDD (APA або GPT).
 - comment: Label for the per-game parental lock toggle in the compatibility settings dialog.
   label: PARENLOCK_GAME
-  string: Parental Lock
+  string: Батьківський захист
 - comment: Hint for the per-game parental lock toggle.
   label: PARENLOCK_GAME_HINT
-  string: Require the parental lock password to start this game.
+  string: Вимагати пароль для запуску цієї гри.
 - comment: Warning shown when saving a per-game parental lock while no parental lock password is set.
   label: PARENLOCK_GAME_NO_PASSWORD
-  string: Set a parental lock password, or this game will not be locked.
+  string: Задайте пароль батьківського контролю, інакше гра не буде захищена.
 - label: MMCE
   string: MMCE
 - label: MMCE_GAMES
-  string: MMCE Games
+  string: Ігри MMCE
 - label: MMCE_SETTINGS
-  string: MMCE Settings
+  string: Налаштування MMCE
 - label: MMCEMODE
-  string: MMCE Start Mode
+  string: Режим запуску MMCE
 - label: MMCE_SLOT
-  string: MMCE Slot
+  string: Слот MMCE
 - label: MMCEIGR_SLOT
-  string: IGR Boot Card Slot(s)
+  string: Слот карти після IGR
 - label: HINT_MMCEIGR_SLOT
-  string: On IGR the card(s) in the selected slot(s) switch back to the boot card; Auto = the slots where a card answered
+  string: Після IGR обрані слоти повертаються на завантажувальну карту; Авто = слоти з картою
 - label: MMCE_PREFIX
-  string: MMCE Prefix Path
+  string: Префікс шляху MMCE
 - label: MMCE_GAMEID
-  string: Send the game ID to the card
+  string: Надсилати ID гри на карту
 - label: HINT_MMCE_GAMEID
-  string: The card switches to the game's own memory card, also for games on USB or MX4SIO
+  string: Карта перемикається на власну карту гри (також з USB або MX4SIO)
 - label: MMCE_ERR_NO_CARD
-  string: No MMCE card answered.
+  string: Карта MMCE не відповідає.
 - label: MMCE_ERR_UL_PARTS
-  string: Games split into parts cannot be started from MMCE yet.
+  string: Розбиті на частини ігри поки що не запускаються з MMCE.
 - label: MMCE_NO_VMC_YET
-  string: VMCs are not used on MMCE yet; the game saves to the real memory card.
+  string: VMC на MMCE поки не підтримується; гра зберігається на реальну карту.
 - label: UDPBD_GAMES
-  string: UDPBD Games
+  string: Ігри UDPBD
 - label: HINT_UDPBD
-  string: Disk served by a PC over the LAN (udpbd-server). Uses the static PS2 IP; SMB is off while UDPBD is on.
+  string: "Диск по мережі з ПК/сервера (udpbd-server). Використовує статичний IP; SMB вимкнено."
 - label: NETWORK_UDPBD_ACTIVE
-  string: The network adapter is used by UDPBD. Turn UDPBD off and restart OPL to use SMB or the network.
+  string: Мережевий адаптер зайнятий UDPBD. Вимкніть UDPBD і перезапустіть OPL для SMB.
 - label: UDPBD_SMB_ACTIVE
-  string: The network adapter is used by SMB. Restart OPL to use UDPBD.
+  string: Мережевий адаптер зайнятий SMB. Перезапустіть OPL для використання UDPBD.
 - comment: IGR Boot Card Slot(s) choice; the cards in both slots switch back.
   label: BOTH
-  string: Both
+  string: Обидва
 - label: ERR_VMC_FRAGMENTS_CONTINUE
-  string: VMC %s is in %d fragments. Continue with Memory Card in slot %d?
+  string: "VMC %s розбито на фрагменти (%d). Продовжити з картою пам'яті у слоті %d?"
 - label: VMC_DEFRAGMENT_HINT
-  string: To defragment the VMC, move the file to a PC and copy it back.
+  string: Для дефрагментації VMC перенесіть файл на ПК і скопіюйте назад.
 - comment: Shown instead of the VMC settings of a game on a UDPBD server that drops what is written (udpbd-vexfat).
   label: UDPBD_READ_ONLY_VMC
-  string: This UDPBD server is read-only, so no VMC can be used on it; the game saves to the real memory card.
+  string: Цей UDPBD-сервер лише для читання, VMC недоступна; збереження йде на реальну карту.
