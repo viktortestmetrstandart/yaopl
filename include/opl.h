@@ -131,6 +131,14 @@ extern int gEnableILK;
 extern int gEnableMX4SIO;
 extern int gEnableBdmHDD;
 extern int gEnableUDPBD;
+extern int gEnableUSB;
+extern int gEnableHDD;
+extern int gActiveDeviceMode;
+
+void oplOnTabSelected(int mode);
+const char *oplGetActiveSourceTag(int mode);
+int oplIsTabConnected(int mode);
+int oplIsTabProbing(int mode);
 
 extern int gAutosort;
 extern int gAutoRefresh;
