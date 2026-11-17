@@ -966,8 +966,12 @@ void menuRenderMain(void)
     if (!selected_item)
         return;
 
-    if (selected_item->item->visible == 0)
+    if (selected_item->item->visible == 0) {
         refreshMenuPosition();
+        item_list_t *sup = (item_list_t *)selected_item->item->userdata;
+        if (sup && sup->mode != gActiveDeviceMode)
+            oplOnTabSelected(sup->mode);
+    }
 
     item_list_t *list = selected_item->item->userdata;
 
