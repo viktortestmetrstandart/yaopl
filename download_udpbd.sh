@@ -31,3 +31,8 @@ PATCH="$PWD/modules/network/udpbd-refused-write.diff"
 if ! (cd "$REPO_FOLDER" && git apply --reverse --check "$PATCH" 2>/dev/null); then
   (cd "$REPO_FOLDER" && git apply "$PATCH") || { echo "download_udpbd.sh: $PATCH does not apply"; exit 1; }
 fi
+# Increase read retries (60 attempts) and retry delay (100ms) so brief USB flash stalls or link hiccups do not drop the disk.
+sed -i 's|^#define UDPBD_MAX_RETRIES .*|#define UDPBD_MAX_RETRIES         60 // OPL custom: survive slow USB/link stalls|' "$REPO_FOLDER/iop/udpbd/src/udpbd.c" || { exit 1; }
+grep -Fq "UDPBD_MAX_RETRIES         60" "$REPO_FOLDER/iop/udpbd/src/udpbd.c" || { echo "download_udpbd.sh: UDPBD_MAX_RETRIES not found"; exit 1; }
+sed -i 's|DelayThread(1000);|DelayThread(100 * 1000);|' "$REPO_FOLDER/iop/udpbd/src/udpbd.c" || { exit 1; }
+grep -Fq "DelayThread(100 * 1000);" "$REPO_FOLDER/iop/udpbd/src/udpbd.c" || { echo "download_udpbd.sh: DelayThread retry delay not found"; exit 1; }
