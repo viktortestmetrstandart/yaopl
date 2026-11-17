@@ -39,7 +39,7 @@ enum ELEM_ATTRIBUTE_TYPE {
     ELEM_TYPE_ATTRIBUTE_IMAGE,
     ELEM_TYPE_GAME_IMAGE,
     ELEM_TYPE_STATIC_IMAGE,
-    ELEM_TYPE_BACKGROUND, // A static image can be specified as the background. Otherwise, the plasma background will be drawn.
+    ELEM_TYPE_BACKGROUND,
     ELEM_TYPE_MENU_ICON,
     ELEM_TYPE_MENU_TEXT,
     ELEM_TYPE_ITEMS_LIST,
@@ -219,7 +219,6 @@ static void drawGameCountText(struct menu_list *menu, struct submenu_list *item,
 
     if (config) {
         if (mutableText->currentConfigId != config->uid) {
-            // force refresh
             mutableText->currentConfigId = config->uid;
 
             int count = getGameCount(menu->item->userdata);
@@ -234,8 +233,6 @@ static void initGameCountText(const char *themePath, config_set_t *themeConfig, 
 {
     mutable_text_t *mutableText = initMutableText(themePath, themeConfig, theme, name, ELEM_TYPE_ATTRIBUTE_TEXT, elem, "", NULL, DISPLAY_ALWAYS, SIZING_NONE);
 
-    // initMutableText() sizes value after the text it is given: drawGameCountText() formats up to
-    // 60 bytes into it
     free(mutableText->value);
     mutableText->value = (char *)calloc(60, sizeof(char));
 
@@ -251,7 +248,6 @@ static void drawAttributeText(struct menu_list *menu, struct submenu_list *item,
     mutable_text_t *mutableText = (mutable_text_t *)elem->extended;
     if (config) {
         if (mutableText->currentConfigId != config->uid) {
-            // force refresh
             mutableText->currentConfigId = config->uid;
             mutableText->currentValue = NULL;
             if (mutableText->wrappedValue) {
@@ -260,8 +256,6 @@ static void drawAttributeText(struct menu_list *menu, struct submenu_list *item,
             }
             if (configGetStr(config, mutableText->value, (const char **)&mutableText->currentValue)) {
                 if (mutableText->sizingMode == SIZING_WRAP) {
-                    // configGetStr() points into the config's own value: wrap a copy, or the line
-                    // breaks would be saved into the CFG with the next settings save
                     int length = strlen(mutableText->currentValue) + 1;
                     mutableText->wrappedValue = (char *)malloc(length);
                     if (mutableText->wrappedValue) {
@@ -377,8 +371,6 @@ static void freeImageTexture(image_texture_t *texture)
 
 static image_texture_t *initImageTexture(const char *themePath, config_set_t *themeConfig, const char *name, const char *imgName, int isOverlay)
 {
-    // Zeroed: a failed load leaves the texture unset, and it is then freed (NULL pointers) and
-    // dropped below, so that the element is disabled instead of drawn from what the memory held
     image_texture_t *texture = (image_texture_t *)calloc(1, sizeof(image_texture_t));
     texture->name = NULL;
 
@@ -437,7 +429,6 @@ static image_texture_t *initImageTexture(const char *themePath, config_set_t *th
 
 static image_texture_t *initImageInternalTexture(config_set_t *themeConfig, const char *name)
 {
-    // Zeroed: with an unknown name nothing is loaded, and freeImageTexture() then frees NULL pointers
     image_texture_t *texture = (image_texture_t *)calloc(1, sizeof(image_texture_t));
     texture->name = NULL;
     int result;
@@ -540,6 +531,11 @@ static mutable_image_t *initMutableImage(const char *themePath, config_set_t *th
 
 static void drawStaticImage(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
+    if (elem->type == ELEM_TYPE_BACKGROUND && guiHasCustomBg()) {
+        guiDrawBGPlasma();
+        return;
+    }
+
     mutable_image_t *staticImage = (mutable_image_t *)elem->extended;
     if (staticImage->overlayTexture) {
         rmDrawOverlayPixmap(&staticImage->overlayTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol,
@@ -576,6 +572,11 @@ static GSTEXTURE *getGameImageTexture(image_cache_t *cache, void *support, struc
 
 static void drawGameImage(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
+    if (elem->type == ELEM_TYPE_BACKGROUND && guiHasCustomBg()) {
+        guiDrawBGPlasma();
+        return;
+    }
+
     mutable_image_t *gameImage = (mutable_image_t *)elem->extended;
     if (item) {
         GSTEXTURE *texture = getGameImageTexture(gameImage->cache, menu->item->userdata, &item->item);
@@ -623,7 +624,6 @@ static void drawAttributeImage(struct menu_list *menu, struct submenu_list *item
     mutable_image_t *attributeImage = (mutable_image_t *)elem->extended;
     if (config) {
         if (attributeImage->currentConfigId != config->uid) {
-            // force refresh
             attributeImage->currentUid = -1;
             attributeImage->currentConfigId = config->uid;
             attributeImage->currentValue = NULL;
@@ -843,11 +843,9 @@ static void drawMenuText(struct menu_list *menu, struct submenu_list *item, conf
 static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
     item_list_t *itemList = menu->item->userdata;
-    // Only render for bdm modes and if current mode is visible
     if (itemList->mode >= ETH_MODE || menu->item->visible == 0)
         return;
 
-    // Count the visible mass devices and find the position of the current one among them
     struct menu_list *cur = menu;
     while (cur->prev)
         cur = cur->prev;
@@ -861,7 +859,6 @@ static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, conf
         }
     }
 
-    // Only render if multiple mass devices are connected
     if (count < 2)
         return;
 
@@ -874,6 +871,36 @@ static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, conf
     GSTEXTURE *indexTex = thmGetTexture(texLookupInternalTexId(&imgName[0]));
     if (indexTex && indexTex->Mem)
         rmDrawPixmap(indexTex, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
+}
+
+static const char *getEmptyListMessage(struct menu_list *menu)
+{
+    int lang = 0; // 0 = UKR, 1 = RUS, 2 = ENG
+    if (lngGetGuiValue() > 0 && lngGetValue() != NULL) {
+        if (strcasecmp(lngGetValue(), "Russian") == 0)
+            lang = 1;
+        else
+            lang = 2;
+    }
+
+    item_list_t *support = (item_list_t *)menu->item->userdata;
+    int waiting = (support == NULL) || (!support->enabled) || ioHasPendingRequests();
+    if (support && support->mode < ETH_MODE && menu->item->visible == 0)
+        waiting = 1;
+
+    if (waiting) {
+        if (lang == 1)
+            return "Ожидание подключения\nносителя / UDPBD...";
+        if (lang == 2)
+            return "Waiting for device\nor UDPBD...";
+        return "Очікування підключення\nносія / UDPBD...";
+    } else {
+        if (lang == 1)
+            return "Игр не найдено";
+        if (lang == 2)
+            return "No games found";
+        return "Ігор не знайдено";
+    }
 }
 
 static void drawItemsList(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
@@ -911,6 +938,22 @@ static void drawItemsList(struct menu_list *menu, struct submenu_list *item, con
             posY += MENU_ITEM_HEIGHT;
             ps = ps->next;
         }
+    } else {
+        const char *msg = getEmptyListMessage(menu);
+        char buf[128];
+        strncpy(buf, msg, sizeof(buf) - 1);
+        buf[sizeof(buf) - 1] = '\0';
+
+        int cx = elem->aligned ? elem->posX : (elem->posX + (elem->width >> 1));
+        int cy = elem->aligned ? elem->posY : (elem->posY + (elem->height >> 1));
+        char *nl = strchr(buf, '\n');
+        if (nl != NULL) {
+            *nl++ = '\0';
+            fntRenderString(elem->font, cx, cy - (MENU_ITEM_HEIGHT >> 1), ALIGN_CENTER, 0, 0, buf, elem->color);
+            fntRenderString(elem->font, cx, cy + (MENU_ITEM_HEIGHT >> 1), ALIGN_CENTER, 0, 0, nl, elem->color);
+        } else {
+            fntRenderString(elem->font, cx, cy, ALIGN_CENTER, 0, 0, buf, elem->color);
+        }
     }
 }
 
@@ -933,13 +976,11 @@ static void initItemsList(const char *themePath, config_set_t *themeConfig, them
     snprintf(elemProp, sizeof(elemProp), "%s_decorator", name);
     configGetStr(themeConfig, elemProp, &decorator);
     if (decorator)
-        itemsList->decorator = decorator; // Will be used later (thmValidate)
+        itemsList->decorator = decorator;
 
     itemsList->decoratorImage = NULL;
 
     elem->extended = itemsList;
-    // elem->endElem = &endBasic; does the job
-
     elem->drawElem = &drawItemsList;
 }
 
@@ -1009,13 +1050,11 @@ static theme_element_t *validateItemsList(const char *themePath, config_set_t *t
     if (list) {
         items_list_t *itemsList = (items_list_t *)list->extended;
         if (itemsList->decorator) {
-            // Second pass to find the decorator
             theme_element_t *decoratorElem = mainElems->first;
             while (decoratorElem) {
                 if (decoratorElem->type == ELEM_TYPE_GAME_IMAGE) {
                     mutable_image_t *gameImage = (mutable_image_t *)decoratorElem->extended;
                     if (!strcmp(itemsList->decorator, gameImage->cache->suffix)) {
-                        // if user want to cache less than displayed items, then disable itemslist icons, if not would load constantly
                         if (gameImage->cache->count >= itemsList->displayedItems)
                             itemsList->decoratorImage = gameImage;
                         break;
@@ -1030,7 +1069,7 @@ static theme_element_t *validateItemsList(const char *themePath, config_set_t *t
         LOG("THEMES No itemsList found, adding a default one\n");
         list = initBasic(themePath, themeConfig, theme, "il", ELEM_TYPE_ITEMS_LIST, 42, 42, ALIGN_NONE, 373, 316, SCALING_RATIO, theme->textColor, theme->fonts[0]);
         initItemsList(themePath, themeConfig, theme, list, "il", NULL);
-        list->next = mainElems->first->next; // Position the itemsList as second element (right after the Background)
+        list->next = mainElems->first->next;
         mainElems->first->next = list;
     }
 
@@ -1039,12 +1078,9 @@ static theme_element_t *validateItemsList(const char *themePath, config_set_t *t
 
 static void validateGUIElems(const char *themePath, config_set_t *themeConfig, theme_t *theme)
 {
-    // 1. check we have a valid Background elements
     validateBackgroundElems(themePath, themeConfig, theme, &theme->mainElems, &theme->infoElems);
     validateBackgroundElems(themePath, themeConfig, theme, &theme->appsMainElems, &theme->appsInfoElems);
 
-    // 2. check we have a valid ItemsList element, and link its decorator to the target element;
-    // the theme must know the default list, menusys navigates with it
     theme->gamesItemsList = validateItemsList(themePath, themeConfig, theme, theme->gamesItemsList, &theme->mainElems);
     theme->appsItemsList = validateItemsList(themePath, themeConfig, theme, theme->appsItemsList, &theme->appsMainElems);
 }
@@ -1081,7 +1117,7 @@ static int addGUIElem(const char *themePath, config_set_t *themeConfig, theme_t 
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_STATIC_IMAGE, 0, 0, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
                 initStaticImage(themePath, themeConfig, theme, elem, name, NULL);
             } else if (!strcmp(elementsType[ELEM_TYPE_BACKGROUND], type)) {
-                if (!elems->first) { // Background elem can only be the first one
+                if (!elems->first) {
                     elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_BACKGROUND, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol, theme->fonts[0]);
                     initBackground(themePath, themeConfig, theme, elem, name, NULL, 1, NULL);
                 }
@@ -1136,7 +1172,7 @@ static int addGUIElem(const char *themePath, config_set_t *themeConfig, theme_t 
                 }
             }
         } else
-            return 0; // ends the reading of elements
+            return 0;
     }
 
     return 1;
@@ -1160,7 +1196,6 @@ GSTEXTURE *thmGetTexture(unsigned int id)
     if (id >= TEXTURES_COUNT)
         return NULL;
     else {
-        // see if the texture is valid
         GSTEXTURE *txt = &gTheme->textures[id];
 
         if (txt->Mem)
@@ -1173,13 +1208,11 @@ GSTEXTURE *thmGetTexture(unsigned int id)
 static void thmFree(theme_t *theme)
 {
     if (theme) {
-        // free elements
         freeGUIElems(&theme->mainElems);
         freeGUIElems(&theme->infoElems);
         freeGUIElems(&theme->appsMainElems);
         freeGUIElems(&theme->appsInfoElems);
 
-        // free textures
         GSTEXTURE *texture;
         int id = 0;
         for (; id < TEXTURES_COUNT; id++) {
@@ -1190,7 +1223,6 @@ static void thmFree(theme_t *theme)
             }
         }
 
-        // free fonts
         for (id = 0; id < THM_MAX_FONTS; ++id)
             fntRelease(theme->fonts[id]);
 
@@ -1219,16 +1251,15 @@ static int thmReadEntry(int index, const char *path, const char *separator, cons
     return index;
 }
 
-/* themePath must contains the leading separator (as it is dependent of the device, we can't know here) */
 static int thmLoadResource(GSTEXTURE *texture, int texId, const char *themePath, short psm, int useDefault)
 {
     int success = -1;
 
     if (themePath != NULL)
-        success = texDiscoverLoad(texture, themePath, texId); // only set success here
+        success = texDiscoverLoad(texture, themePath, texId);
 
     if ((success < 0) && useDefault)
-        texLoadInternal(texture, texId); // we don't mind the result of "default"
+        texLoadInternal(texture, texId);
 
     return success;
 }
@@ -1237,7 +1268,6 @@ static void thmSetTextColor(theme_elems_t *elems, u64 color)
 {
     theme_element_t *elem;
     for (elem = elems->first; elem; elem = elem->next) {
-        // Images keep their own colour
         if (elem->type != ELEM_TYPE_ATTRIBUTE_IMAGE && elem->type != ELEM_TYPE_GAME_IMAGE && elem->type != ELEM_TYPE_STATIC_IMAGE &&
             elem->type != ELEM_TYPE_BACKGROUND && elem->type != ELEM_TYPE_MENU_ICON && elem->type != ELEM_TYPE_BDM_INDEX)
             elem->color = color;
@@ -1259,9 +1289,8 @@ static void thmSetColors(theme_t *theme)
 
 static void thmLoadFonts(config_set_t *themeConfig, const char *themePath, theme_t *theme)
 {
-    int fntID; // theme side font id, not the fntSys handle
+    int fntID;
     for (fntID = 0; fntID < THM_MAX_FONTS; ++fntID) {
-        // does the font by the key exist?
         char fntKey[16];
 
         if (fntID == 0) {
@@ -1288,7 +1317,6 @@ static void thmLoadFonts(config_set_t *themeConfig, const char *themePath, theme
                 fontSize = FNTSYS_DEFAULT_SIZE;
 
             int fntHandle = fntLoadFile(fullPath, fontSize);
-            // Do we have a valid font? Assign the font handle to the theme font slot
             if (fntHandle != FNT_ERROR)
                 theme->fonts[fntID] = fntHandle;
         }
@@ -1323,13 +1351,12 @@ static void thmLoad(const char *themePath)
 
     config_set_t *themeConfig = NULL;
     if (!themePath) {
-        // No theme specified. Prepare and load the default theme.
         themeConfig = configAlloc(0, NULL, NULL);
         configReadBuffer(themeConfig, &conf_theme_OPL_cfg, size_conf_theme_OPL_cfg);
     } else {
         snprintf(path, sizeof(path), "%sconf_theme.cfg", themePath);
         themeConfig = configAlloc(0, NULL, path);
-        configRead(themeConfig); // try to load the theme config file. If it does not exist, defaults will be used.
+        configRead(themeConfig);
     }
 
     int intValue;
@@ -1353,8 +1380,6 @@ static void thmLoad(const char *themePath)
     if (configGetColor(themeConfig, "sel_text_color", color))
         newT->selTextColor = GS_SETREG_RGBA(color[0], color[1], color[2], 0x80);
 
-    // before loading the element definitions, we have to have the fonts prepared
-    // for that, we load the fonts and a translation table
     if (themePath)
         thmLoadFonts(themeConfig, themePath, newT);
 
@@ -1400,14 +1425,11 @@ static void thmLoad(const char *themePath)
     LOG("THEMES Number of cache: %d\n", newT->gameCacheCount);
     LOG("THEMES Used height: %d\n", newT->usedHeight);
 
-    // default all to not loaded...
     for (i = 0; i < TEXTURES_COUNT; i++)
         newT->textures[i].Mem = NULL;
 
-    // LOGO, loaded here to avoid flickering during startup with device in AUTO + theme set
     texLoadInternal(&newT->textures[LOGO_PICTURE], LOGO_PICTURE);
 
-    // First start with busy icon
     const char *themePath_temp = themePath;
     int customBusy = 0;
     for (i = LOAD0_ICON; i <= LOAD7_ICON; i++) {
@@ -1422,7 +1444,6 @@ static void thmLoad(const char *themePath)
     }
     newT->loadingIconCount = i;
 
-    // Customizable icons
     int customIndex = 0, customIndexCount = 0;
     for (i = BDM_ICON; i <= START_ICON; i++) {
         if (thmLoadResource(&newT->textures[i], i, themePath, GS_PSM_CT32, newT->useDefault) >= 0) {
@@ -1433,19 +1454,12 @@ static void thmLoad(const char *themePath)
         }
     }
 
-    // A theme with its own five-dot BdmIndex pictures but none for fewer devices keeps its five dots
     newT->bdmIndexFixed = customIndex && !customIndexCount;
-
-    /* Not customizable icons - currently unused.
-    for (i = L1_ICON; i <= R3_ICON; i++)
-        thmLoadResource(&newT->textures[i], i, NULL, GS_PSM_CT32, 1); */
 
     if (!themePath)
         for (i = ELF_FORMAT; i <= VMODE_PAL; i++)
             thmLoadResource(&newT->textures[i], i, NULL, GS_PSM_CT32, 1);
 
-    // thmAddElements() loads the theme in the IO thread when a device with themes is found: swap and free the old
-    // theme only while the GUI thread is not drawing it, and size the games' art cache ids for the new one.
     guiLock();
     gTheme = newT;
     menuRebuildCaches();
@@ -1453,24 +1467,19 @@ static void thmLoad(const char *themePath)
     guiUnlock();
 }
 
-// Call under guiLock(): the IO thread changes the list when a device comes or goes, and Display Settings shows it.
 static void thmRebuildGuiNames(void)
 {
     int i;
 
-    // build the themes name list, allocated once at its largest: the settings dialog keeps the pointer
     if (guiThemesNames == NULL)
         guiThemesNames = (const char **)malloc((THM_MAX_FILES + 2) * sizeof(char **));
 
-    // add default internal
     guiThemesNames[0] = "<OPL>";
 
-    // A theme found on several devices is listed once, where it was first found, with its copy of the lowest rank
     nGuiThemes = listDeviceFiles(themes, nThemes, guiThemes);
     for (i = 0; i < nGuiThemes; i++)
         guiThemesNames[i + 1] = themes[guiThemes[i]].name;
 
-    // the dialog may still point past the new end
     for (i = nGuiThemes + 1; i < THM_MAX_FILES + 2; i++)
         guiThemesNames[i] = NULL;
 }
@@ -1504,14 +1513,11 @@ void thmInit(void)
 
     thmReloadScreenExtents();
 
-    // initialize default internal
+    // initialize default internal theme only (no external theme folder scan)
     thmLoad(NULL);
-
-    thmAddElements(gBaseMCDir, "/", 0);
+    thmRebuildGuiNames();
 }
 
-// Drops the themes of a device that is gone. The theme in use moves to another copy of it, or to the internal theme
-// until the device is back: the settings keep its name.
 void thmRemoveElements(const char *path)
 {
     char name[256] = "";
@@ -1523,8 +1529,6 @@ void thmRemoveElements(const char *path)
     if (guiThemeCopy >= 0)
         snprintf(name, sizeof(name), "%s", themes[guiThemeCopy].name);
 
-    // guiThemeCopy becomes -2 if the theme in use is dropped: loaded, but its files are gone. The dropped names are
-    // freed, so the list is rebuilt before the GUI thread draws it again.
     guiLock();
     j = dropDeviceFiles(themes, nThemes, path, &guiThemeCopy);
     dropped = (j != nThemes);
@@ -1556,7 +1560,6 @@ int thmSetGuiValue(int themeID, int reload)
     if (themeID != -1) {
         int copy;
 
-        // an id the settings dialog took from a list that has become shorter since
         if (themeID > nGuiThemes)
             return 0;
 
@@ -1599,7 +1602,6 @@ const char **thmGetGuiList(void)
 
 char *thmGetFilePath(int themeID)
 {
-    // The theme notification can still be shown after its device went away
     if (themeID < 1 || themeID > nGuiThemes)
         return "";
 
