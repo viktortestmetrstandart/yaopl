@@ -600,6 +600,9 @@ static void menuNextH()
         selected_item = next;
         itemConfigId = -1;
         sfxPlay(SFX_CURSOR);
+        item_list_t *sup = (item_list_t *)selected_item->item->userdata;
+        if (sup)
+            oplOnTabSelected(sup->mode);
     }
 }
 
@@ -613,6 +616,9 @@ static void menuPrevH()
         selected_item = prev;
         itemConfigId = -1;
         sfxPlay(SFX_CURSOR);
+        item_list_t *sup = (item_list_t *)selected_item->item->userdata;
+        if (sup)
+            oplOnTabSelected(sup->mode);
     }
 }
 
