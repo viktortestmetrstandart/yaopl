@@ -161,7 +161,7 @@ gui_strings:
 - label: START_DEVICE
   string: Запустити пристрій
 - label: REFRESH
-  string: Оновити
+  string: Знайти пристрій
 - label: BDMMODE
   string: Режим запуску BDM
 - label: HDDMODE
