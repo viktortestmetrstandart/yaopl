@@ -1,0 +1,359 @@
+comments: English translation for GraShara OPL
+translations:
+  LOCALE: English
+  SAVE_CHANGES: Save Changes
+  BACK: Back
+  NETCONFIG: Network Config
+  SHOW_ADVANCED_OPTS: Show advanced options
+  NO_ITEMS: <no values>
+  SETTINGS_SAVED: Settings saved to %s
+  ERROR_SAVING_SETTINGS: Error writing settings!
+  EXIT: Exit
+  SETTINGS: Settings
+  MENU: Menu
+  BDM_GAMES: BDM Games
+  HDD_GAMES: HDD Games
+  NET_GAMES: ETH Games
+  APPS: Apps
+  THEME: Display
+  LANGUAGE: Language
+  CONFIRMATION_POFF: Console will be powered off.
+  CONFIRMATION_EXIT: Exit to Browser?
+  CONFIRMATION_CANCEL_UPDATE: Cancel updating?
+  HDD_NOT_CONNECTED_ERROR: "%d: HardDisk Drive not detected."
+  HDD_NOT_FORMATTED_ERROR: "%d: HardDisk Drive not formatted."
+  NETWORK_STARTUP_ERROR: "%d: Network startup error."
+  NETWORK_STARTUP_ERROR_NETIF: "%d: Network adaptor not detected."
+  NETWORK_STARTUP_ERROR_CONN: "%d: Could not connect to SMB server."
+  NETWORK_STARTUP_ERROR_LOGON: "%d: Could not log into SMB server."
+  NETWORK_STARTUP_ERROR_SHARE: "%d: Could not open SMB share."
+  NETWORK_SHARE_LIST_ERROR: "%d: Could not list SMB shares."
+  NETWORK_GAMES_LIST_ERROR: "%d: Could not list games."
+  NETWORK_ERROR_DHCP_FAIL: "%d: DHCP server unavailable."
+  NETWORK_ERROR_LINK_FAIL: "%d: No network connection."
+  "ON": "On"
+  "OFF": "Off"
+  OK: OK
+  SELECT: Select
+  CANCEL: Cancel
+  CIRCLE: Circle
+  CROSS: Cross
+  GAMES_LIST: Games List
+  COMPAT_SETTINGS: Game Settings
+  REMOVE_ALL_SETTINGS: Remove All Settings
+  SCROLLING: Scrolling Speed
+  SLOW: Slow
+  MEDIUM: Medium
+  FAST: Fast
+  DEFDEVICE: Default Menu
+  LOAD_FROM_DISC: Load From Disc
+  PLEASE_WAIT: Please wait.
+  ERROR_LOADING_ID: Error loading Game ID.
+  AUTOSORT: Automatic Sorting
+  ERR_LOADING_LANGFILE: Error loading language file.
+  DEBUG: Debug Colors
+  NO_CONTROLLER: No controller detected, waiting...
+  COVERART: Cover Art
+  WIDE_SCREEN: Widescreen
+  POWEROFF: Power Off
+  LOADING_SETTINGS: Loading config...
+  SAVING_SETTINGS: Saving config...
+  START_DEVICE: Start Device
+  REFRESH: Refresh devices
+  BDMMODE: BDM Start Mode
+  HDDMODE: HDD (APA) Start Mode
+  ETHMODE: ETH Start Mode
+  APPMODE: Applications Start Mode
+  AUTO: Auto
+  MANUAL: Manual
+  STARTNBD: Start NBD Server
+  STARTINGNBD: NBD Server starting...
+  RUNNINGNBD: NBD Server running...
+  STARTFAILNBD: Failed to start NBD Server.
+  UNLOADNBD: NBD Server unloading...
+  EXITTO: IGR Path
+  BGCOLOR: Background Color
+  TXTCOLOR: Text Color
+  CAT_SMB_SERVER: "- SMB Server -"
+  IP_ADDRESS_TYPE: IP Address Type
+  IP_ADDRESS_TYPE_STATIC: Static
+  IP_ADDRESS_TYPE_DHCP: DHCP
+  IP_ADDRESS: IP Address
+  ADDRESS: Address
+  MASK: Mask
+  GATEWAY: Gateway
+  DNS_SERVER: DNS Server
+  PORT: Port
+  SHARE: Share
+  USER: User
+  PASSWORD: Password
+  NOT_SET: <not set>
+  ADDRESS_TYPE: Address Type
+  ADDR_TYPE_IP: IP
+  ADDR_TYPE_NETBIOS: NetBIOS
+  ACCEPT: Accept
+  DELETE_WARNING: Item will be permanently deleted, continue?
+  RENAME: Rename
+  DELETE: Delete
+  RUN: Play
+  GFX_SETTINGS: Display Settings
+  ENABLE_WRITE: Write Operations
+  LASTPLAYED: Remember Last Played
+  SELECTBUTTON: Select Button
+  ERR_FRAGMENTED: Error, the game is fragmented.
+  ERR_FILE_INVALID: Error, could not run the item.
+  TEST: Test Changes
+  HINT_GUEST: Leave empty for guest auth.
+  HINT_MODE1: Accurate Reads
+  HINT_MODE2: Synchronous Mode
+  HINT_MODE3: Unhook Syscalls
+  HINT_MODE4: Skip Videos
+  HINT_MODE5: Emulate DVD-DL
+  HINT_MODE6: Disable IGR
+  HINT_VMC_SIZE: Changing the size will reformat the VMC.
+  CREATE: Create
+  START: Start
+  MODIFY: Modify
+  ABORT: Abort
+  RESET: Reset
+  USE_GENERIC: Use Generic
+  VMC_SCREEN: Configure VMC
+  VMC_NAME: Name
+  SIZE: Size
+  VMC_STATUS: Status
+  VMC_PROGRESS: Progress
+  VMC_FILE_EXISTS: VMC file exists.
+  VMC_FILE_ERROR: Invalid VMC file, size is incorrect.
+  VMC_FILE_NEW: VMC file needs to be created.
+  ERR_VMC_CONTINUE: "Failed to use VMC %s. Continue with the Memory Card in slot %d?"
+  AUTOREFRESH: Automatic Refresh
+  ABOUT: About
+  DEVS: Developers
+  QANDA: Quality Assurance
+  BDM_PREFIX: BDM Prefix Path
+  HINT_EXITPATH: Boots custom ELF after an IGR.
+  HINT_SPINDOWN: Value in minute(s), 0 to disable spin down.
+  HDD_SPINDOWN: HDD Spin Down
+  VMODE: Video Mode
+  UICOLOR: UI Color
+  SELCOLOR: Selected Color
+  RESETCOLOR: Reset Colors
+  INFO: Info
+  ALTSTARTUP: Custom ELF
+  COLOR_SELECTION: Color Selection
+  RECONNECT: Reconnect
+  HINT_SHARENAME: Leave empty to list shares.
+  ETH_PREFIX: ETH Prefix Path
+  BACKSPACE: Backspace
+  SPACE: Space
+  ENTER: Enter
+  MODE: Mode
+  VMC_SLOT1: VMC Slot 1
+  VMC_SLOT2: VMC Slot 2
+  GAME_ID: Game ID
+  DMA_MODE: DMA Mode
+  VSYNC: V-Sync
+  MODE1: Mode 1
+  MODE2: Mode 2
+  MODE3: Mode 3
+  MODE4: Mode 4
+  MODE5: Mode 5
+  MODE6: Mode 6
+  GSCONFIG: Configure GSM
+  ETH_OPMODE: Ethernet Link Mode
+  ETH_100MFDX: 100Mbit full-duplex
+  ETH_100MHDX: 100Mbit half-duplex
+  ETH_10MFDX: 10Mbit full-duplex
+  ETH_10MHDX: 10Mbit half-duplex
+  GSM_SETTINGS: GSM Settings
+  ENABLEGSM: GSM Selector
+  HINT_ENABLEGSM: Enables or disables GSM.
+  HINT_GSMVMODE: Forced Custom Display Mode.
+  XOFFSET: H-POS
+  HINT_XOFFSET: Horizontal Adjustment.
+  YOFFSET: V-POS
+  HINT_YOFFSET: Vertical Adjustment.
+  OVERSCAN: Overscan
+  HINT_OVERSCAN: Overscan Adjustment.
+  GSMSKIPVIDEOS: Skip FMV
+  HINT_GSMSKIPVIDEOS: Skips Full Motion Videos.
+  CHEAT_SETTINGS: Cheat Settings
+  ENABLECHEAT: PS2RD Cheat Engine
+  HINT_ENABLECHEAT: Lets PS2RD Cheat Engine patch your games.
+  CHEATMODE: PS2RD Cheat Mode
+  HINT_CHEATMODE: Auto select or select game cheats.
+  CHEATMODEAUTO: Auto select cheats
+  CHEATMODESELECT: Select game cheats
+  ERR_CHEATS_LOAD_FAILED: "Error: failed to load cheat file."
+  NO_CHEATS_FOUND: No cheats found.
+  DL_DEFAULTS: Download Defaults
+  NET_UPDATE: Network Update
+  NET_UPDATE_ALL: Re-download existing records
+  NET_UPDATE_FAILED: Update failed.
+  NET_UPDATE_CONN_FAILED: Failed to connect to update server.
+  NET_UPDATE_DONE: Update completed.
+  NET_UPDATE_CANCELLED: Update cancelled.
+  CONFIRMATION_SETTINGS_UPDATE: Download settings from the network?
+  CUSTOMIZED_SETTINGS: Customized Settings
+  DOWNLOADED_DEFAULTS: Downloaded Defaults
+  AUTO_START_IN_N_SECS: Auto start in %i s...
+  AUTOSTARTLAST: Auto Start
+  HINT_AUTOSTARTLAST: Value in second(s), 0 to disable auto start.
+  PS2LOGO: PS2 Logo
+  HINT_PS2LOGO: Displays the PS2 Logo for console region discs.
+  PADEMUCONFIG: Configure PADEMU
+  PADEMU_SETTINGS: Pad Emulator Settings
+  PADEMU_ENABLE: Pad Emulator
+  HINT_PADEMU_ENABLE: Turns on/off Pad Emulator for selected game.
+  PADEMU_MODE: Pad Emulator mode
+  HINT_PADEMU_MODE: Select Pad Emulator mode.
+  DS34USB_MODE: DualShock 3/4 USB
+  DS34BT_MODE: DualShock 3/4 BT
+  PADPORT: "Settings for port:"
+  HINT_PAD_PORT: Select Controller Port to configure Pad Emulator Settings.
+  PADEMU_PORT: Emulation
+  HINT_PADEMU_PORT: Turns on/off Pad Emulator for selected port.
+  PADEMU_VIB: Vibration
+  HINT_PADEMU_VIB: Turns on/off Vibration for selected Pad Emulator port.
+  USBDG_MAC: "USB Bluetooth Adapter MAC Address:"
+  PAD_MAC: "DS Controller Paired to MAC Address:"
+  PAIR: Pair
+  PAIR_PAD: Pair DS Controller
+  HINT_PAIRPAD: Pair DS Controller with Bluetooth Adapter MAC Address.
+  NOT_CONNECTED: Not connected
+  BTINFO: Bluetooth Adapter Information
+  HINT_BTINFO: Shows more information and supported features.
+  HCIVER: "HCI Version:"
+  LMPVER: "LMP Version:"
+  MANUFACTURER: "Manufacturer ID:"
+  SUPFEATURES: "Supported Features:"
+  "YES": "Yes"
+  "NO": "No"
+  BT_SUPPORTED: Bluetooth adapter should be fully compatible with DS3/4 controllers.
+  BT_NOTSUPPORTED: Bluetooth adapter may not work correctly with DS3/4 controllers.
+  MTAP_ENABLE: Multitap Emulation
+  HINT_MTAP_ENABLE: Turns on/off Multitap Emulation for selected game.
+  MTAP_PORT: "Multitap Emulator port:"
+  HINT_MTAP_PORT: Select Controller Port for Multitap Emulation.
+  PADEMU_WORKAROUND: Fake DS3 Workaround
+  HINT_PADEMU_WORKAROUND: Some fake DS3 need workaround, this option will enable it.
+  GSM_FIELD_FIX: Emulate FIELD Flipping
+  HINT_GSM_FIELD_FIX: Fix for games that glitch under progressive video modes.
+  PARENLOCKCONFIG: Parental Lock Settings
+  PARENLOCK_PASSWORD: Parental Lock Password
+  PARENLOCK_PASSWORD_HINT: Leave blank to disable the parental lock.
+  PARENLOCK_ENTER_PASSWORD_TITLE: Enter parental lock password
+  PARENLOCK_PASSWORD_INCORRECT: Parental lock password incorrect.
+  PARENLOCK_DISABLE_WARNING: Parental lock has been disabled.
+  BUILD_DETAILS: "Build Options:"
+  PARENLOCK_INVALID_PASSWORD: Error - this password cannot be used.
+  ERR_VMC_FRAGMENTED_CONTINUE: "VMC %s is fragmented (%d). Continue with the Memory Card in slot %d?"
+  AUDIO_SETTINGS: Audio Settings
+  SFX: Sound Effects
+  BOOT_SND: Boot Sound
+  SFX_VOLUME: Sound Effects Volume
+  BOOT_SND_VOLUME: Boot Sound Volume
+  CFM_VMODE_CHG: Confirm video mode change?
+  CACHE_HDD_GAME_LIST: Cache Game List (HDD)
+  ENABLE_NOTIFICATIONS: Notifications
+  CFG_NOTIFICATION: Config loaded from %s
+  THM_NOTIFICATION: Theme loaded from %s
+  LNG_NOTIFICATION: Language loaded from %s
+  PARTITION_NOTIFICATION: "%s partition mounted."
+  OPTIONS: Options
+  GAME_SETTINGS_SAVED: Game settings saved.
+  GAME_SETTINGS_REMOVED: "%s settings have been removed."
+  NET_UPDATE_HINT: Overwrites existing game compatibility settings.
+  SETTINGS_SOURCE: Settings Mode
+  GLOBAL_SETTINGS: Global
+  PERGAME_SETTINGS: Per-game
+  ALL_SETTINGS: All
+  GAME_SETTINGS_PROMPT: Select settings to remove.
+  FORUM_DETAILS: "Support Forums:"
+  INFO_TITLE: Title
+  INFO_GENRE: Genre
+  INFO_RELEASE: Release
+  INFO_DEVELOPER: Developer
+  INFO_DESCRIPTION: Description
+  BLOCKDEVICE_SETTINGS: Game Devices
+  CONTROLLER_SETTINGS: Controller Settings
+  HINT_BDM_START: Enable or disable the Block Device Manager.
+  HINT_BLOCK_DEVICES: Enable or disable game storage devices (HDD / UDPBD / USB / MX4SIO).
+  USB_GAMES: USB Games
+  ILINK_GAMES: iLink Games
+  MX4SIO_GAMES: MX4SIO Games
+  PADMACROCONFIG: Configure PADMACRO
+  PADMACRO_SETTINGS: Pad Macro Settings
+  PADMACRO_ENABLE: Pad Macro
+  PADMACRO_SLOWDOWN: "Analog Stick Slowdown:"
+  HINT_PADMACRO_SLOWDOWN_AXIS: Reduces analog stick sensitivity when held.
+  LEFT_ANALOG: Left Stick
+  RIGHT_ANALOG: Right Stick
+  PADMACRO_INVERT_AXIS: "Invert Analog Axis:"
+  HINT_PADMACRO_INVERT_AXIS: Inverts the selected analog axis.
+  TURBO_SPEED: Turbo Speed
+  HINT_TURBO_SPEED: Speed of turbo button presses.
+  ACT_WHILE_PRESSED: While held
+  ACT_TOGGLED: Toggled
+  LANGUAGE_JAPANESE: JAPANESE
+  LANGUAGE_ENGLISH: ENGLISH
+  LANGUAGE_FRENCH: FRENCH
+  LANGUAGE_SPANISH: SPANISH
+  LANGUAGE_GERMAN: GERMAN
+  LANGUAGE_ITALIAN: ITALIAN
+  LANGUAGE_DUTCH: DUTCH
+  LANGUAGE_PORTUGUESE: PORTUGUESE
+  LANGUAGE_RUSSIAN: RUSSIAN
+  LANGUAGE_KOREAN: KOREAN
+  LANGUAGE_TRAD_CHINESE: TRADITIONAL CHINESE
+  LANGUAGE_SIMPL_CHINESE: SIMPLIFIED CHINESE
+  OSD_SETTINGS: OSD Settings
+  OSD_SETTINGS_LNG: OSD Language
+  HINT_OSD_SETTINGS_LNG: Forced console language selection.
+  ENABLE_LNG: Enable
+  OSD_SETTINGS_TVASPECT: TV Aspect Ratio
+  FULL_SCREEN: Full Screen
+  OSD_SETTINGS_VMODE: Video Output
+  SYSTEM_DEFAULT: System Default
+  BGM: Background Music
+  BGM_VOLUME: Music Volume
+  DEF_BGM_PATH: Default Music Path
+  DEF_BGM_PATH_HINT: Path to custom Ogg track for default theme.
+  HIGH: High
+  LOW: Low
+  XSENSITIVITY: X Sensitivity
+  YSENSITIVITY: Y Sensitivity
+  FILE_COUNT: "Found files: %i"
+  CHEAT_SELECTION: Cheat Selection
+  HDD_HINT: Only one HDD (APA or GPT) is allowed.
+  PARENLOCK_GAME: Parental Lock
+  PARENLOCK_GAME_HINT: Require parental lock password to launch this game.
+  PARENLOCK_GAME_NO_PASSWORD: Set a parental lock password in settings, otherwise the game will not be locked.
+  MMCE: MMCE
+  MMCE_GAMES: MMCE Games
+  MMCE_SETTINGS: MMCE Settings
+  MMCEMODE: MMCE Start Mode
+  MMCE_SLOT: MMCE Slot
+  MMCEIGR_SLOT: Boot Card Slot after IGR
+  HINT_MMCEIGR_SLOT: After IGR selected slots switch back to boot card; Auto = slots with card.
+  MMCE_PREFIX: MMCE Prefix Path
+  MMCE_GAMEID: Send Game ID to Card
+  HINT_MMCE_GAMEID: Card switches to game's own card (also from USB or MX4SIO).
+  MMCE_ERR_NO_CARD: MMCE card does not respond.
+  MMCE_ERR_UL_PARTS: Split games cannot be launched from MMCE yet.
+  MMCE_NO_VMC_YET: VMC on MMCE is not supported yet; game saves to real memory card.
+  UDPBD_GAMES: UDPBD Games
+  HINT_UDPBD: "Network drive from PC/router (udpbd-server). Uses static IP."
+  NETWORK_UDPBD_ACTIVE: Network adapter is used by UDPBD.
+  UDPBD_SMB_ACTIVE: Network adapter is used by SMB.
+  BOTH: Both
+  ERR_VMC_FRAGMENTS_CONTINUE: "VMC %s is fragmented (%d). Continue with the Memory Card in slot %d?"
+  VMC_DEFRAGMENT_HINT: To defragment VMC, move the file to PC and copy it back.
+  UDPBD_READ_ONLY_VMC: This UDPBD server is read-only, VMC is unavailable; saves go to real memory card.
+  GAMES_HEADER: GAMES
+  WAIT_STORAGE: Waiting for game storage
+  NO_GAMES_FOUND: No games found
+  HDD_NOT_FOUND_MSG: Console HDD not detected
+  USB_NOT_FOUND_MSG: USB drive not detected
+  MX4SIO_NOT_FOUND_MSG: MX4SIO not detected
+  ALL_DEVICES_DISABLED: All devices disabled
