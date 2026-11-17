@@ -486,16 +486,23 @@ static void guiShowBlockDeviceConfig(void)
 {
     int ret;
 
-    diaSetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, gEnableMX4SIO);
-    diaSetEnabled(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, !gHDDStartMode);
-    diaSetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, gEnableBdmHDD);
+    diaSetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, gEnableHDD);
     diaSetInt(diaBlockDevicesConfig, CFG_ENABLEUDPBD, gEnableUDPBD);
+    diaSetInt(diaBlockDevicesConfig, CFG_ENABLEUSB, gEnableUSB);
+    diaSetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, gEnableMX4SIO);
 
     ret = diaExecuteDialog(diaBlockDevicesConfig, -1, 1, NULL);
     if (ret) {
-        diaGetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, &gEnableMX4SIO);
-        diaGetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, &gEnableBdmHDD);
+        diaGetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, &gEnableHDD);
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEUDPBD, &gEnableUDPBD);
+        diaGetInt(diaBlockDevicesConfig, CFG_ENABLEUSB, &gEnableUSB);
+        diaGetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, &gEnableMX4SIO);
+
+        if (!gEnableHDD && !gEnableUDPBD && !gEnableUSB && !gEnableMX4SIO)
+            gEnableUDPBD = 1;
+
+        gHDDStartMode = gEnableHDD ? START_MODE_AUTO : START_MODE_DISABLED;
+        gEnableBdmHDD = gEnableHDD;
     }
 }
 
@@ -507,50 +514,12 @@ static int guiUpdater(int modified)
         diaGetInt(diaConfig, CFG_LASTPLAYED, &showAutoStartLast);
         diaSetVisible(diaConfig, CFG_LBL_AUTOSTARTLAST, showAutoStartLast);
         diaSetVisible(diaConfig, CFG_AUTOSTARTLAST, showAutoStartLast);
-
-        diaGetInt(diaConfig, CFG_BDMMODE, &gBDMStartMode);
-        diaSetVisible(diaConfig, BLOCKDEVICE_BUTTON, gBDMStartMode);
     }
     return 0;
 }
 
-int guiDeviceTypeToIoMode(int deviceType)
-{
-    if (deviceType == 0)
-        return BDM_MODE;
-    else if (deviceType == 1)
-        return HDD_MODE;
-    else
-        return MMCE_MODE;
-}
-
-int guiIoModeToDeviceType(int ioMode)
-{
-    switch (ioMode) {
-        case BDM_MODE:
-        case BDM_MODE1:
-        case BDM_MODE2:
-        case BDM_MODE3:
-        case BDM_MODE4:
-            return 0;
-        case HDD_MODE:
-            return 1;
-        case MMCE_MODE:
-            return 2;
-        default:
-            return 0;
-    }
-}
-
 void guiShowConfig()
 {
-    const char *deviceNames[] = {_l(_STR_BDM_GAMES), _l(_STR_HDD_GAMES), _l(_STR_MMCE), NULL};
-    const char *deviceModes[] = {_l(_STR_OFF), _l(_STR_MANUAL), _l(_STR_AUTO), NULL};
-
-    diaSetEnum(diaConfig, CFG_DEFDEVICE, deviceNames);
-    diaSetEnum(diaConfig, CFG_BDMMODE, deviceModes);
-    diaSetEnum(diaConfig, CFG_HDDMODE, deviceModes);
-
     diaSetInt(diaConfig, CFG_BDMCACHE, bdmCacheSize);
     diaSetInt(diaConfig, CFG_HDDCACHE, hddCacheSize);
 
@@ -564,13 +533,6 @@ void guiShowConfig()
     diaSetVisible(diaConfig, CFG_AUTOSTARTLAST, gRememberLastPlayed);
     diaSetVisible(diaConfig, CFG_LBL_AUTOSTARTLAST, gRememberLastPlayed);
 
-    int deviceModeIndex = guiIoModeToDeviceType(gDefaultDevice);
-    diaSetInt(diaConfig, CFG_DEFDEVICE, deviceModeIndex);
-    diaSetInt(diaConfig, CFG_BDMMODE, gBDMStartMode);
-    diaSetVisible(diaConfig, BLOCKDEVICE_BUTTON, gBDMStartMode);
-    diaSetEnabled(diaConfig, CFG_HDDMODE, !gEnableBdmHDD);
-    diaSetInt(diaConfig, CFG_HDDMODE, gHDDStartMode);
-
     int ret = diaExecuteDialog(diaConfig, -1, 1, &guiUpdater);
     if (ret) {
         diaGetInt(diaConfig, CFG_HDDGAMELISTCACHE, &gHDDGameListCache);
@@ -581,14 +543,13 @@ void guiShowConfig()
         diaGetInt(diaConfig, CFG_LASTPLAYED, &gRememberLastPlayed);
         diaGetInt(diaConfig, CFG_AUTOSTARTLAST, &gAutoStartLastPlayed);
         DisableCron = 1;
-        diaGetInt(diaConfig, CFG_DEFDEVICE, &deviceModeIndex);
-        gDefaultDevice = guiDeviceTypeToIoMode(deviceModeIndex);
-        diaGetInt(diaConfig, CFG_HDDMODE, &gHDDStartMode);
         diaGetInt(diaConfig, CFG_BDMCACHE, &bdmCacheSize);
         diaGetInt(diaConfig, CFG_HDDCACHE, &hddCacheSize);
 
+        gBDMStartMode = START_MODE_AUTO;
         gETHStartMode = START_MODE_DISABLED;
         gAPPStartMode = START_MODE_DISABLED;
+        gMMCEStartMode = START_MODE_DISABLED;
         gPS2Logo = 0;
 
         if (ret == BLOCKDEVICE_BUTTON)
