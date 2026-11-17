@@ -329,33 +329,46 @@ static void bgmThread(void *arg)
 
 static void bgmIoThread(void *arg)
 {
-    int partsToRead, decodeTotal, bitStream, i;
+    int partsToRead, decodedParts, decodeTotal, bitStream, i;
 
     bgmIoThreadRunning = 1;
     do {
         WaitSema(inSema);
         partsToRead = 1;
 
-        while ((wrPtr + partsToRead < BGM_RING_BUFFER_COUNT) && (PollSema(inSema) == inSema))
+        while ((partsToRead < BGM_RING_BUFFER_COUNT) && (PollSema(inSema) == inSema))
             partsToRead++;
 
-        decodeTotal = BGM_RING_BUFFER_SIZE;
-        int bufferPtr = 0;
-        do {
-            int ret = ov_read(vorbisFile, bgmBuffer[wrPtr] + bufferPtr, decodeTotal, 0, 2, 1, &bitStream);
-            if (ret > 0) {
-                bufferPtr += ret;
-                decodeTotal -= ret;
-            } else if (ret < 0) {
-                LOG("BGM: I/O error while reading.\n");
-                terminateFlag = 1;
-                break;
-            } else if (ret == 0)
-                ov_pcm_seek(vorbisFile, 0);
-        } while (decodeTotal > 0);
+        decodedParts = 0;
+        for (i = 0; i < partsToRead; i++) {
+            int slot = (wrPtr + i) % BGM_RING_BUFFER_COUNT;
+            int bufferPtr = 0;
+            decodeTotal = BGM_RING_BUFFER_SIZE;
 
-        wrPtr = (wrPtr + partsToRead) % BGM_RING_BUFFER_COUNT;
-        for (i = 0; i < partsToRead; i++)
+            while (decodeTotal > 0 && !terminateFlag) {
+                int ret = ov_read(vorbisFile, bgmBuffer[slot] + bufferPtr, decodeTotal, 0, 2, 1, &bitStream);
+                if (ret > 0) {
+                    bufferPtr += ret;
+                    decodeTotal -= ret;
+                } else if (ret == OV_HOLE) {
+                    continue;
+                } else if (ret < 0) {
+                    LOG("BGM: I/O error while reading (%d).\n", ret);
+                    terminateFlag = 1;
+                    break;
+                } else {
+                    ov_pcm_seek(vorbisFile, 0);
+                }
+            }
+
+            if (terminateFlag)
+                break;
+
+            decodedParts++;
+        }
+
+        wrPtr = (wrPtr + decodedParts) % BGM_RING_BUFFER_COUNT;
+        for (i = 0; i < decodedParts; i++)
             SignalSema(outSema);
         WakeupThread(bgmThreadID);
     } while (!terminateFlag && gEnableBGM);
