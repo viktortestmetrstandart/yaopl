@@ -229,7 +229,7 @@ static s32 bgmStateSema = -1;
 static unsigned char terminateFlag, bgmIsPlaying;
 static volatile unsigned char bgmLaunchBlocked = 0;
 static unsigned char rdPtr, wrPtr;
-static char bgmBuffer[BGM_RING_BUFFER_COUNT][BGM_RING_BUFFER_SIZE];
+static char bgmBuffer[BGM_RING_BUFFER_COUNT][BGM_RING_BUFFER_SIZE] __attribute__((aligned(64)));
 static volatile unsigned char bgmThreadRunning, bgmIoThreadRunning;
 
 static u8 bgmThreadStack[BGM_THREAD_STACK_SIZE] __attribute__((aligned(16)));
