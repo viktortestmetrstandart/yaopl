@@ -869,14 +869,13 @@ endif
 
 TRANSLATIONS_LNG = $(TRANSLATIONS:%=$(LNG_DIR)lang_%.lng)
 TRANSLATIONS_YML = $(TRANSLATIONS:%=$(LNG_SRC_DIR)%.yml)
-ENGLISH_TEMPLATE_YML = $(LNG_SRC_DIR)English.yml
-ENGLISH_LNG = $(LNG_SRC_DIR)lang_English.lng
+ENGLISH_LNG = $(LNG_DIR)lang_English.lng
 BASE_LANGUAGE = $(LNG_TMPL_DIR)_base.yml
 INTERNAL_LANGUAGE_C = src/lang_internal.c
 INTERNAL_LANGUAGE_H = include/lang_autogen.h
 LANG_COMPILER = lang_compiler.py
 
-languages: $(ENGLISH_TEMPLATE_YML) $(TRANSLATIONS_YML) $(ENGLISH_LNG) $(TRANSLATIONS_LNG) $(INTERNAL_LANGUAGE_C) $(INTERNAL_LANGUAGE_H)
+languages: $(TRANSLATIONS_YML) $(ENGLISH_LNG) $(TRANSLATIONS_LNG) $(INTERNAL_LANGUAGE_C) $(INTERNAL_LANGUAGE_H)
 
 download_lng:
 	./download_lng.sh
@@ -897,22 +896,15 @@ download_cfla:
 	./download_cfla.sh
 
 $(TRANSLATIONS_LNG): $(LNG_DIR)lang_%.lng: $(LNG_SRC_DIR)%.yml $(BASE_LANGUAGE) $(LANG_COMPILER)
-	python3 $(LANG_COMPILER) --make_lng --base $(BASE_LANGUAGE) --translation $< $@
+	@mkdir -p $(LNG_DIR)
+	python3 $(LANG_COMPILER) --make_lng --base $(BASE_LANGUAGE) --translation $< $(if $(wildcard $(LNG_TMPL_DIR)$*_override.yml),--override $(LNG_TMPL_DIR)$*_override.yml) $@
 
 $(TRANSLATIONS_YML): %.yml: $(BASE_LANGUAGE) $(LANG_COMPILER)
 	python3 $(LANG_COMPILER) --update_translation_yml --base $(BASE_LANGUAGE) --translation $@
 
-$(ENGLISH_TEMPLATE_YML): $(BASE_LANGUAGE) $(LANG_COMPILER)
-	python3 $(LANG_COMPILER) --make_template_yml --base $< $@
-
-$(ENGLISH_LNG): $(ENGLISH_TEMPLATE_YML) $(BASE_LANGUAGE) $(LANG_COMPILER)
+$(ENGLISH_LNG): $(LNG_TMPL_DIR)English.yml $(BASE_LANGUAGE) $(LANG_COMPILER)
+	@mkdir -p $(LNG_DIR)
 	python3 $(LANG_COMPILER) --make_lng --base $(BASE_LANGUAGE) --translation $< $@
-
-$(INTERNAL_LANGUAGE_C): $(BASE_LANGUAGE) $(LANG_COMPILER)
-	python3 $(LANG_COMPILER) --make_source --base $< $@
-
-$(INTERNAL_LANGUAGE_H): $(BASE_LANGUAGE) $(LANG_COMPILER)
-	python3 $(LANG_COMPILER) --make_header --base $< $@
 
 ifndef PS2SDK
 ps2sdk-not-setup:
