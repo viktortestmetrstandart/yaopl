@@ -113,15 +113,19 @@ def make_lng(
     translation_obj: Dict[str, Any],
     output_file: TextIOWrapper,
     translation_filename: str,
+    override_obj: Dict[str, Any] = None,
 ) -> None:
     for comm_line in translation_obj['comments'].splitlines():
         output_file.write(f'# {comm_line}\n')
 
+    translations = dict(translation_obj.get('translations', {}))
+    if override_obj and 'translations' in override_obj:
+        translations.update(override_obj['translations'])
+
     for string_def in base_obj['gui_strings']:
         label = string_def['label']
-        translation = translation_obj['translations'].get(label)
+        translation = translations.get(label)
         if translation is None:
-            #print(f'WARNING: translation for {label} not found in {translation_filename}', file=sys.stderr)
             translation = string_def['string']
         if not isinstance(translation, str):
             if "untranslated" not in translation and "same" not in translation:
@@ -145,6 +149,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--base', type=argparse.FileType('r', encoding='utf-8'), required=True, metavar="BASE_YML")
     parser.add_argument('--translation', type=argparse.FileType('r+', encoding='utf-8'), metavar="LANG_YML")
+    parser.add_argument('--override', type=argparse.FileType('r', encoding='utf-8'), metavar="OVERRIDE_YML")
     parser.add_argument('output_file', nargs='?', type=argparse.FileType('w', encoding='utf-8'), default=sys.stdout)
 
     args = parser.parse_args()
@@ -172,4 +177,5 @@ if __name__ == '__main__':
         args.translation.truncate()
     elif args.make_lng:
         translation_obj = yaml.safe_load(args.translation)
-        make_lng(base_obj, translation_obj, args.output_file, args.translation.name)
+        override_obj = yaml.safe_load(args.override) if args.override else None
+        make_lng(base_obj, translation_obj, args.output_file, args.translation.name, override_obj)
