@@ -751,20 +751,11 @@ struct UIItem diaAbout[] = {
     {UI_BREAK},
 
     {UI_SPACER},
+    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"MVP - Vesper", -1}}},
+    {UI_BREAK},
+
+    {UI_SPACER},
     {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"... and the anonymous ...", -1}}},
-    {UI_BREAK},
-
-    {UI_BREAK},
-
-    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {NULL, _STR_QANDA}}},
-    {UI_BREAK},
-
-    {UI_SPACER},
-    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"algol - Berion - El_Patas - EP - gledson999 - jolek - lee4", -1}}},
-    {UI_BREAK},
-
-    {UI_SPACER},
-    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"LocalH - RandQalan - ShaolinAssassin - yoshi314 - zero35", -1}}},
     {UI_BREAK},
 
     {UI_BREAK},
