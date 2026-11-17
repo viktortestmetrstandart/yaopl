@@ -906,6 +906,12 @@ $(ENGLISH_LNG): $(LNG_TMPL_DIR)English.yml $(BASE_LANGUAGE) $(LANG_COMPILER)
 	@mkdir -p $(LNG_DIR)
 	python3 $(LANG_COMPILER) --make_lng --base $(BASE_LANGUAGE) --translation $< $@
 
+$(INTERNAL_LANGUAGE_C): $(BASE_LANGUAGE) $(LANG_COMPILER)
+	python3 $(LANG_COMPILER) --make_source --base $< $@
+
+$(INTERNAL_LANGUAGE_H): $(BASE_LANGUAGE) $(LANG_COMPILER)
+	python3 $(LANG_COMPILER) --make_header --base $< $@
+
 ifndef PS2SDK
 ps2sdk-not-setup:
 	@echo "PS2SDK is not setup. Please setup PS2SDK before building this project"
