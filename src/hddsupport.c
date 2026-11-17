@@ -32,6 +32,9 @@ static unsigned char hddHDProKitDetected = 0;
 static unsigned char hddModulesLoadCount = 0;
 static unsigned char hddModulesLoaded = 0;
 static unsigned char hddSupportModulesLoaded = 0;
+static unsigned char hddSuppressPopups = 0;
+static unsigned char hddConnectedFlag = 0;
+static unsigned char hddBypassCache = 0;
 
 static char *hddPrefix = "pfs0:";
 static hdl_games_list_t hddGames;
@@ -42,20 +45,21 @@ static item_list_t hddGameList;
 static int hddLoadGameListCache(hdl_games_list_t *cache);
 static int hddUpdateGameListCache(hdl_games_list_t *cache, hdl_games_list_t *game_list);
 
-static void hddInitModules(void)
+void hddSuppressErrorPopups(int suppress)
 {
-    hddLoadModules();
-    hddLoadSupportModules();
+    hddSuppressPopups = suppress ? 1 : 0;
+}
 
-    // update Themes
-    char path[256];
-    sprintf(path, "%sTHM", gHDDPrefix);
-    thmAddElements(path, "/", 1);
+int hddIsConnectedStatus(void)
+{
+    return hddConnectedFlag;
+}
 
-    sprintf(path, "%sLNG", gHDDPrefix);
-    lngAddLanguages(path, "/", hddGameList.mode);
-
-    sbCreateFolders(gHDDPrefix, 0);
+void hddResetProbe(void)
+{
+    hddForceUpdate = 1;
+    hddBypassCache = 1;
+    hddConnectedFlag = 0;
 }
 
 // HD Pro Kit is mapping the 1st word in ROM0 seg as a main ATA controller,
@@ -183,18 +187,13 @@ int hddLoadModules(void)
     LOG("HDDSUPPORT LoadModules %d\n", hddModulesLoadCount);
 
     if (hddModulesLoaded)
-        retStatus = HDD_LOADMODULES_STATUS_ALREADYLOADED;
+        return HDD_LOADMODULES_STATUS_ALREADYLOADED;
 
     if (hddModulesLoadCount == 0) {
-        // Increment the load count as soon as possible to prevent thread scheduling from allowing another thread to
-        // call into here and try to double load modules.
         hddModulesLoadCount = 1;
 
-        // DEV9 must be loaded, as HDD.IRX depends on it. Even if not required by the I/F (i.e. HDPro)
         sysInitDev9();
 
-        // try to detect HD Pro Kit (not the connected HDD),
-        // if detected it loads the specific ATAD module
         hddHDProKitDetected = hddCheckHDProKit();
         if (hddHDProKitDetected) {
             LOG("[ATAD_HDPRO]:\n");
@@ -210,7 +209,8 @@ int hddLoadModules(void)
 
         if (retLoadModule < 0) {
             LOG("HDD: No HardDisk Drive detected.\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_IF_NOT_DETECTED);
+            if (!hddSuppressPopups)
+                setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_IF_NOT_DETECTED);
             retStatus = HDD_LOADMODULES_STATUS_ERROR;
         } else {
             retStatus = HDD_LOADMODULES_STATUS_NOERROR;
@@ -230,16 +230,12 @@ int hddLoadModules(void)
 int hddDetectNonSonyFileSystem()
 {
     int result = -1;
-    // Allocate memory for storing data for the first two sectors.
     u8 *pSectorData = (u8 *)malloc(512 * 2);
     if (pSectorData == NULL) {
         LOG("hddDetectNonSonyFileSystem: failed to allocate scratch memory\n");
         return -1;
     }
 
-    // Trying to load the APA/PFS irx modules when a non-sony formatted HDD is connected (ie: MBR/GPT  w/ exFAT) runs
-    // the risk of corrupting the HDD. To avoid that get the first two sectors and perform some sanity checks. If
-    // we reasonably suspect the disk is not APA formatted bail out from loading the sony fs irx modules.
     result = fileXioDevctl("xhdd0:", ATA_DEVCTL_READ_PARTITION_SECTOR, NULL, 0, pSectorData, 512 * 2);
     if (result < 0) {
         LOG("hddDetectNonSonyFileSystem: failed to read data from hdd %d\n", result);
@@ -247,27 +243,20 @@ int hddDetectNonSonyFileSystem()
         return -1;
     }
 
-    // Check for MBR signature.
     if (pSectorData[0x1FE] == 0x55 && pSectorData[0x1FF] == 0xAA) {
-        // Found MBR partition type.
         LOG("hddDetectNonSonyFileSystem: found MBR partition data\n");
         result = 1;
     } else if (strncmp((const char *)&pSectorData[0x200], "EFI PART", 8) == 0) {
-        // Found GPT partition type.
         LOG("hddDetectNonSonyFileSystem: found GPT partition data\n");
         result = 1;
     } else if (strncmp((const char *)&pSectorData[4], "APA", 3) == 0) {
-        // Found APA partition type.
         LOG("hddDetectNonSonyFileSystem: found APA partition data\n");
         result = 0;
     } else {
-        // Even though we didn't find evidence of non-APA partition data, if we load the APA irx module
-        // it will write to the drive and potentially corrupt any data that might be there.
         LOG("hddDetectNonSonyFileSystem: partition data not recognized\n");
         result = -1;
     }
 
-    // Cleanup and return.
     free(pSectorData);
     return result;
 }
@@ -282,20 +271,17 @@ void hddLoadSupportModules(void)
                            "\0"
                            "20";
     static char pfsarg[] = "\0"
-                           "-o" // max open
+                           "-o"
                            "\0"
-                           "10" // Default value: 2
+                           "10"
                            "\0"
-                           "-n" // Number of buffers
+                           "-n"
                            "\0"
-                           "40"; // Default value: 8 | Max value: 127
+                           "40";
 
     LOG("HDDSUPPORT LoadSupportModules\n");
 
-    // Check if the drive contains MBR/GPT partition data before we load the APA/PFS modules. If the drive is not
-    // APA then loading the APA irx modules can corrupt the drive as it will try to write APA partition data.
     if (hddDetectNonSonyFileSystem() != 0) {
-        // Drive is MBR/GPT style, or unknown, bail out or risk corrupting the drive.
         LOG("HDDSUPPORT LoadSupportModules bailing out early...\n");
         return;
     }
@@ -305,14 +291,15 @@ void hddLoadSupportModules(void)
         int ret = sysLoadModuleBuffer(&ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg);
         if (ret < 0) {
             LOG("HDD: No HardDisk Drive detected.\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_MODULE_HDD_FAILURE);
+            if (!hddSuppressPopups)
+                setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_MODULE_HDD_FAILURE);
             return;
         }
 
-        // Check if a HDD unit is connected
         if (hddCheck() < 0) {
             LOG("HDD: No HardDisk Drive detected.\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_NOT_DETECTED);
+            if (!hddSuppressPopups)
+                setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_NOT_DETECTED);
             return;
         }
 
@@ -320,7 +307,8 @@ void hddLoadSupportModules(void)
         ret = sysLoadModuleBuffer(&ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg);
         if (ret < 0) {
             LOG("HDD: HardDisk Drive not formatted (PFS).\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_FORMATTED_ERROR, ERROR_HDD_MODULE_PFS_FAILURE);
+            if (!hddSuppressPopups)
+                setErrorMessageWithCode(_STR_HDD_NOT_FORMATTED_ERROR, ERROR_HDD_MODULE_PFS_FAILURE);
             return;
         }
 
@@ -334,7 +322,6 @@ void hddLoadSupportModules(void)
 
         ret = fileXioMount(hddPrefix, gOPLPart, FIO_MT_RDWR);
         if (ret == -ENOENT) {
-            // Attempt to create the partition.
             if ((hddCreateOPLPartition(gOPLPart)) >= 0)
                 fileXioMount(hddPrefix, gOPLPart, FIO_MT_RDWR);
         }
@@ -343,15 +330,18 @@ void hddLoadSupportModules(void)
             hddCheckOPLFolder(hddPrefix);
             gHDDPrefix = "pfs0:OPL/";
         }
+
+        sbCreateFolders(gHDDPrefix, 0);
     }
 }
 
 void hddInit(item_list_t *itemList)
 {
     LOG("HDDSUPPORT Init\n");
-    hddForceUpdate = 0; // Use cache at initial startup.
+    hddForceUpdate = 1;
+    hddBypassCache = 0;
+    hddConnectedFlag = 0;
     configGetInt(configGetByType(CONFIG_OPL), "hdd_frames_delay", &hddGameList.delay);
-    ioPutRequest(IO_CUSTOM_SIMPLEACTION, &hddInitModules);
     hddGameList.enabled = 1;
 }
 
@@ -363,17 +353,34 @@ item_list_t *hddGetObject(int initOnly)
 }
 
 static int hddNeedsUpdate(item_list_t *itemList)
-{ /* Auto refresh is disabled by setting HDD_MODE_UPDATE_DELAY to MENU_UPD_DELAY_NOUPDATE, within hddsupport.h.
-       Hence any update request would be issued by the user, which should be taken as an explicit request to re-scan the HDD. */
-    return 1;
+{
+    if (itemList->mode != gActiveDeviceMode)
+        return 0;
+    return hddForceUpdate ? 1 : 0;
 }
 
 static int hddUpdateGameList(item_list_t *itemList)
 {
     hdl_games_list_t hddGamesNew;
-    int ret;
+    int ret = -1;
 
-    if (((ret = hddLoadGameListCache(&hddGames)) != 0) || (hddForceUpdate)) {
+    hddForceUpdate = 0;
+    hddLoadModules();
+
+    if (!hddIsPresent()) {
+        hddConnectedFlag = 0;
+        hddFreeHDLGamelist(&hddGames);
+        return 0;
+    }
+
+    hddConnectedFlag = 1;
+    hddLoadSupportModules();
+    if (!hddSupportModulesLoaded) {
+        hddFreeHDLGamelist(&hddGames);
+        return 0;
+    }
+
+    if (hddBypassCache || (ret = hddLoadGameListCache(&hddGames)) != 0) {
         hddGamesNew.count = 0;
         hddGamesNew.games = NULL;
         ret = hddGetHDLGamelist(&hddGamesNew);
@@ -384,8 +391,7 @@ static int hddUpdateGameList(item_list_t *itemList)
         }
     }
 
-    hddForceUpdate = 1; // Subsequent refresh operations will cause the HDD to be scanned.
-
+    hddBypassCache = 1;
     return (ret == 0 ? hddGames.count : 0);
 }
 
@@ -418,6 +424,7 @@ static void hddDeleteGame(item_list_t *itemList, int id)
 {
     hddDeleteHDLGame(&hddGames.games[id]);
     hddForceUpdate = 1;
+    hddBypassCache = 1;
 }
 
 static void hddRenameGame(item_list_t *itemList, int id, char *newName)
@@ -426,6 +433,7 @@ static void hddRenameGame(item_list_t *itemList, int id, char *newName)
     strcpy(game->name, newName);
     hddSetHDLGameInfo(&hddGames.games[id]);
     hddForceUpdate = 1;
+    hddBypassCache = 1;
 }
 
 void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
@@ -472,7 +480,7 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         pfs_blockinfo_t blocks[11];
 
         for (vmc_id = 0; vmc_id < 2; vmc_id++) {
-            hdd_vmc_infos.active = 0; // A slot without a VMC is written as inactive below
+            hdd_vmc_infos.active = 0;
             if (vmc_name[vmc_id][0]) {
                 have_error = 1;
                 if (sysCheckVMC(gHDDPrefix, "/", vmc_name[vmc_id], 0, &vmc_superblock) > 0) {
@@ -482,7 +490,6 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
                     hdd_vmc_infos.specs.block_size = vmc_superblock.pages_per_block;
                     hdd_vmc_infos.specs.card_size = vmc_superblock.pages_per_cluster * vmc_superblock.clusters_per_card;
 
-                    // Check vmc inode block chain (write operation can cause damage)
                     snprintf(vmc_path, sizeof(vmc_path), "%sVMC/%s.bin", gHDDPrefix, vmc_name[vmc_id]);
                     if ((nparts = hddGetFileBlockInfo(vmc_path, parts, blocks, 11)) > 0) {
                         have_error = 0;
@@ -491,11 +498,8 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
                             hdd_vmc_infos.blocks[i].number = blocks[i + 1].number;
                             hdd_vmc_infos.blocks[i].subpart = blocks[i + 1].subpart;
                             hdd_vmc_infos.blocks[i].count = blocks[i + 1].count;
-                            LOG("HDDSUPPORT hdd_vmc_infos.blocks[%d].number     : 0x%X\n", i, hdd_vmc_infos.blocks[i].number);
-                            LOG("HDDSUPPORT hdd_vmc_infos.blocks[%d].subpart    : 0x%X\n", i, hdd_vmc_infos.blocks[i].subpart);
-                            LOG("HDDSUPPORT hdd_vmc_infos.blocks[%d].count      : 0x%X\n", i, hdd_vmc_infos.blocks[i].count);
                         }
-                    } else { // else VMC file is too fragmented
+                    } else {
                         LOG("HDDSUPPORT Block Chain NG\n");
                         have_error = 2;
                     }
@@ -504,7 +508,7 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
                 if (have_error) {
                     if (gAutoLaunchGame == NULL) {
                         char error[256];
-                        if (have_error == 2) // VMC file is fragmented
+                        if (have_error == 2)
                             snprintf(error, sizeof(error), _l(_STR_ERR_VMC_FRAGMENTED_CONTINUE), vmc_name[vmc_id], (vmc_id + 1));
                         else
                             snprintf(error, sizeof(error), _l(_STR_ERR_VMC_CONTINUE), vmc_name[vmc_id], (vmc_id + 1));
@@ -515,7 +519,6 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
                 }
             }
 
-            // Write every slot, so a slot left active by an aborted launch cannot ride along
             static int mcemuSlots[2];
             int slotWord = sbMcemuSlotWord(&hdd_mcemu_irx, size_hdd_mcemu_irx, vmc_id, mcemuSlots);
             if (slotWord >= 0) {
@@ -544,7 +547,6 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         dmaMode -= 3;
     }
     hddSetTransferMode(dmaType, dmaMode);
-    // gHDDSpindown [0..20] -> spindown [0..240] -> seconds [0..1200]
     hddSetIdleTimeout(gHDDSpindown * 12);
 
     if (hddHDProKitDetected) {
@@ -571,16 +573,8 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     }
 
     settings = (struct cdvdman_settings_hdd *)((u8 *)irx + i);
-
-    // patch 48bit flag
     settings->common.media = hddIs48bit() & 0xff;
-
-    // patch start_sector
     settings->lba_start = game->start_sector;
-
-    // Real media size, for CDVDMAN's out-of-bounds read emulation. The ISO9660 PVD
-    // cannot be trusted for this: badly mastered discs understate it and read data
-    // past the end of the volume by raw LBA.
     settings->common.mediaLsnCount = game->total_size_in_kb / 2;
 
     if (configGetStrCopy(configSet, CONFIG_ITEM_ALTSTARTUP, filename, sizeof(filename)) == 0)
@@ -589,23 +583,21 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     if (gPS2Logo)
         EnablePS2Logo = CheckPS2Logo(0, game->start_sector + OPL_HDD_MODE_PS2LOGO_OFFSET);
 
-    // Check for ZSO to correctly adjust layer1 start
-    settings->common.layer1_start = 0; // cdvdman will read it from APA header
+    settings->common.layer1_start = 0;
     hddReadSectors(game->start_sector + OPL_HDD_MODE_PS2LOGO_OFFSET, 1, IOBuffer);
     if (*(u32 *)IOBuffer == ZSO_MAGIC && ziso_init((ZISO_header *)IOBuffer, *(u32 *)((u8 *)IOBuffer + sizeof(ZISO_header))) == 0) {
         probed_fd = 0;
         probed_lba = game->start_sector + OPL_HDD_MODE_PS2LOGO_OFFSET;
         ziso_read_sector(IOBuffer, 16, 1);
         u32 maxLBA = *(u32 *)(IOBuffer + 80);
-        if (maxLBA > 0 && maxLBA < ziso_total_block) {   // dual layer check
-            settings->common.layer1_start = maxLBA - 16; // adjust second layer start
+        if (maxLBA > 0 && maxLBA < ziso_total_block) {
+            settings->common.layer1_start = maxLBA - 16;
         }
-        // For compressed images the partition size does not match the media size.
         settings->common.mediaLsnCount = ziso_total_block;
     }
 
     if (gAutoLaunchGame == NULL)
-        deinit(NO_EXCEPTION, HDD_MODE); // CAREFUL: deinit will call hddCleanUp, so hddGames/game will be freed
+        deinit(NO_EXCEPTION, HDD_MODE);
     else {
         miniDeinit(configSet);
 
@@ -618,8 +610,6 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 
     settings->common.fakemodule_flags |= FAKE_MODULE_FLAG_DEV9;
     settings->common.fakemodule_flags |= FAKE_MODULE_FLAG_ATAD;
-
-    // adjust ZSO cache
     settings->common.zso_cache = hddCacheSize;
 
     sysLaunchLoaderElf(filename, "HDD_MODE", size_irx, irx, size_mcemu_irx, hdd_mcemu_irx, EnablePS2Logo, compatMode);
@@ -632,7 +622,7 @@ static config_set_t *hddGetConfig(item_list_t *itemList, int id)
 
     snprintf(path, sizeof(path), "%sCFG/%s.cfg", gHDDPrefix, game->startup);
     config_set_t *config = configAlloc(0, NULL, path);
-    configRead(config); // Does not matter if the config file exists or not.
+    configRead(config);
 
     configSetStr(config, CONFIG_ITEM_NAME, game->name);
     configSetInt(config, CONFIG_ITEM_SIZE, game->total_size_in_kb >> 10);
@@ -646,6 +636,8 @@ static config_set_t *hddGetConfig(item_list_t *itemList, int id)
 static int hddGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
 {
     char path[256];
+    if (!hddConnectedFlag)
+        return -1;
     if (isRelative)
         snprintf(path, sizeof(path), "%s%s/%s_%s", gHDDPrefix, folder, value, suffix);
     else
@@ -663,7 +655,6 @@ static int hddGetIconId(item_list_t *itemList)
     return HDD_ICON;
 }
 
-// This may be called, even if hddInit() was not.
 static void hddCleanUp(item_list_t *itemList, int exception)
 {
     LOG("HDDSUPPORT CleanUp\n");
@@ -675,10 +666,8 @@ static void hddCleanUp(item_list_t *itemList, int exception)
             fileXioUmount(hddPrefix);
     }
 
-    // UI may have loaded modules outside of HDD mode, so deinitialize regardless of the enabled status.
     if (hddSupportModulesLoaded) {
         fileXioDevctl("pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
-
         hddSupportModulesLoaded = 0;
     }
 }
@@ -688,7 +677,6 @@ static int hddCheckVMC(item_list_t *itemList, char *name, int createSize)
     return sysCheckVMC(gHDDPrefix, "/", name, createSize, NULL);
 }
 
-// This may be called, even if hddInit() was not.
 static void hddShutdown(item_list_t *itemList)
 {
     LOG("HDDSUPPORT Shutdown\n");
@@ -698,23 +686,16 @@ static void hddShutdown(item_list_t *itemList)
         fileXioUmount(hddPrefix);
     }
 
-    // UI may have loaded modules outside of HDD mode, so deinitialize regardless of the enabled status.
     if (hddSupportModulesLoaded) {
-        /* Close all files */
         fileXioDevctl("pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
-
         hddSupportModulesLoaded = 0;
     }
 
     if (hddModulesLoadCount > 0) {
         hddModulesLoadCount -= 1;
         if (hddModulesLoadCount == 0) {
-            // DEV9 will remain active if ETH is in use, so put the HDD in IDLE state.
-            // The HDD should still enter standby state after 21 minutes & 15 seconds, as per the ATAD defaults.
             hddSetIdleImmediate();
         }
-
-        // Only shut down dev9 from here, if it was initialized from here before.
         sysShutdownDev9();
     }
 }
@@ -748,16 +729,14 @@ static int hddLoadGameListCache(hdl_games_list_t *cache)
                     LOG("hddLoadGameListCache: %d games loaded.\n", count);
                     result = 0;
                 } else {
-                    LOG("hddLoadGameListCache: I/O error.\n");
                     free(games);
                     result = EIO;
                 }
             } else {
-                LOG("hddLoadGameListCache: failed to allocate memory.\n");
                 result = ENOMEM;
             }
         } else {
-            result = -1; // Empty file
+            result = -1;
         }
 
         fclose(file);
@@ -784,25 +763,19 @@ static int hddUpdateGameListCache(hdl_games_list_t *cache, hdl_games_list_t *gam
                 if (strncmp(cache->games[i].partition_name, game_list->games[j].partition_name, APA_IDMAX + 1) == 0)
                     break;
             }
-
             if (j == game_list->count) {
-                LOG("hddUpdateGameListCache: game added.\n");
                 modified = 1;
                 break;
             }
         }
-
-        if ((!modified) && (game_list->count != cache->count)) {
-            LOG("hddUpdateGameListCache: game removed.\n");
+        if ((!modified) && (game_list->count != cache->count))
             modified = 1;
-        }
     } else {
         modified = (game_list->count > 0) ? 1 : 0;
     }
 
     if (!modified)
         return 0;
-    LOG("hddUpdateGameListCache: caching new game list.\n");
 
     sprintf(filename, "%sgames.bin", gHDDPrefix);
     if (game_list->count > 0) {
@@ -814,7 +787,6 @@ static int hddUpdateGameListCache(hdl_games_list_t *cache, hdl_games_list_t *gam
             result = EIO;
         }
     } else {
-        // Last game deleted.
         remove(filename);
         result = 0;
     }
@@ -824,8 +796,6 @@ static int hddUpdateGameListCache(hdl_games_list_t *cache, hdl_games_list_t *gam
 
 int hddIsPresent()
 {
-    // the only thing that currently uses ata_device_identify is ATA_DEVCTL_GET_HIGHEST_UDMA_MODE, so this is the best method to check for presence via xhdd (for now anyways)
-    // ideally, we'd only have ata_device_identify
     return fileXioDevctl("xhdd0:", ATA_DEVCTL_GET_HIGHEST_UDMA_MODE, NULL, 0, NULL, 0) >= 0;
 }
 
