@@ -174,21 +174,7 @@ struct UIItem diaConfig[] = {
     {UI_INT, CFG_HDDSPINDOWN, 1, 1, _STR_HINT_SPINDOWN, 0, 0, {.intvalue = {20, 20, 0, 20}}},
     {UI_SPLITTER},
 
-    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_BDMMODE}}},
-    {UI_SPACER},
-    {UI_ENUM, CFG_BDMMODE, 1, 1, _STR_HINT_BDM_START, 0, 0, {.intvalue = {0, 0}}},
-    {UI_SPACER},
     {UI_BUTTON, BLOCKDEVICE_BUTTON, 1, 1, _STR_HINT_BLOCK_DEVICES, 0, 0, {.label = {NULL, _STR_BLOCKDEVICE_SETTINGS}}},
-    {UI_BREAK},
-
-    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_HDDMODE}}},
-    {UI_SPACER},
-    {UI_ENUM, CFG_HDDMODE, 1, 1, _STR_HDD_HINT, 0, 0, {.intvalue = {0, 0}}},
-    {UI_BREAK},
-
-    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_DEFDEVICE}}},
-    {UI_SPACER},
-    {UI_ENUM, CFG_DEFDEVICE, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
     {UI_BREAK},
 
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"BDM / ZSO Cache", -1}}},
