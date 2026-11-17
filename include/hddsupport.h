@@ -75,4 +75,9 @@ void hddLoadSupportModules(void);
 void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet);
 int hddIsPresent();
 
+void hddSuppressErrorPopups(int suppress);
+int hddIsConnectedStatus(void);
+void hddResetProbe(void);
+int hddDetectNonSonyFileSystem(void);
+
 #endif
