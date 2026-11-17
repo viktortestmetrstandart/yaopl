@@ -747,3 +747,17 @@ gui_strings:
 - comment: Shown instead of the VMC settings of a game on a UDPBD server that drops what is written (udpbd-vexfat).
   label: UDPBD_READ_ONLY_VMC
   string: Цей UDPBD-сервер лише для читання, VMC недоступна; збереження йде на реальну карту.
+- label: GAMES_HEADER
+  string: ІГРИ
+- label: WAIT_STORAGE
+  string: Очікування підключення носія ігор
+- label: NO_GAMES_FOUND
+  string: Ігор не знайдено
+- label: HDD_NOT_FOUND_MSG
+  string: HDD на приставці не виявлено
+- label: USB_NOT_FOUND_MSG
+  string: USB-носій не виявлено
+- label: MX4SIO_NOT_FOUND_MSG
+  string: MX4SIO не виявлено
+- label: ALL_DEVICES_DISABLED
+  string: Усі носії вимкнено
