@@ -462,6 +462,7 @@ static int bgmInit(void)
     wrPtr = 0;
     bgmThreadRunning = 0;
     bgmIoThreadRunning = 0;
+    memset(bgmBuffer, 0, sizeof(bgmBuffer));
 
     sema.max_count = BGM_RING_BUFFER_COUNT;
     sema.init_count = BGM_RING_BUFFER_COUNT;
