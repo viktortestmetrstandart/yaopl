@@ -103,29 +103,29 @@ struct UIItem diaNetConfig[] = {
     // end of dialog
     {UI_TERMINATOR}};
 
-// Block Devices Settings Menu (without iLink)
+// Block Devices Settings Menu (Priority: HDD -> UDPBD -> USB -> MX4SIO)
 struct UIItem diaBlockDevicesConfig[] = {
     {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_BLOCKDEVICE_SETTINGS}}},
     {UI_SPLITTER},
 
-    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"USB", -1}}},
-    {UI_SPACER},
-    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_ON}}},
-    {UI_BREAK},
-
-    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"MX4SIO", -1}}},
-    {UI_SPACER},
-    {UI_BOOL, CFG_ENABLEMX4SIO, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
-    {UI_BREAK},
-
-    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"HDD (GPT/MBR)", -1}}},
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"HDD", -1}}},
     {UI_SPACER},
     {UI_BOOL, CFG_ENABLEBDMHDD, 1, 1, _STR_HDD_HINT, 0, 0, {.intvalue = {0, 0}}},
     {UI_BREAK},
 
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"UDPBD", -1}}},
     {UI_SPACER},
-    {UI_BOOL, CFG_ENABLEUDPBD, 1, 1, _STR_HINT_UDPBD, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BOOL, CFG_ENABLEUDPBD, 1, 1, _STR_HINT_UDPBD, 0, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"USB", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, CFG_ENABLEUSB, 1, 1, -1, 0, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"MX4SIO", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, CFG_ENABLEMX4SIO, 1, 1, -1, 0, 0, {.intvalue = {1, 1}}},
     {UI_BREAK},
 
     // buttons
