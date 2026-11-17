@@ -104,6 +104,7 @@ static void clearMenuGameList(opl_io_module_t *mdl);
 static void moduleCleanup(opl_io_module_t *mod, int exception, int modeSelected);
 static void reset(void);
 static void deferredAudioInit(void);
+static void initMenuForListSupport(opl_io_module_t *mod);
 
 // frame counter
 static unsigned int frameCounter;
@@ -239,9 +240,7 @@ void moduleUpdateMenuInternal(opl_io_module_t *mod, int themeChanged, int langCh
     menuRemoveHints(&mod->menuItem);
 
     menuAddHint(&mod->menuItem, _STR_MENU, START_ICON);
-    if (!mod->support->enabled)
-        menuAddHint(&mod->menuItem, _STR_START_DEVICE, gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON);
-    else {
+    if (mod->menuItem.current) {
         menuAddHint(&mod->menuItem, _STR_RUN, gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON);
 
         if (gTheme->infoElems.first)
@@ -249,9 +248,8 @@ void moduleUpdateMenuInternal(opl_io_module_t *mod, int themeChanged, int langCh
 
         if (!(mod->support->flags & MODE_FLAG_NO_COMPAT) || gEnableWrite)
             menuAddHint(&mod->menuItem, _STR_OPTIONS, TRIANGLE_ICON);
-
-        menuAddHint(&mod->menuItem, _STR_REFRESH, SELECT_ICON);
     }
+    menuAddHint(&mod->menuItem, _STR_REFRESH, SELECT_ICON);
 
     if (themeChanged) {
         if (mod->subMenu)
@@ -262,12 +260,156 @@ void moduleUpdateMenuInternal(opl_io_module_t *mod, int themeChanged, int langCh
     guiUnlock();
 }
 
-static void itemInitSupport(item_list_t *support)
+static int isTabModeEnabled(int mode)
 {
-    support->itemInit(support);
-    moduleUpdateMenuInternal((opl_io_module_t *)support->owner, 0, 0);
-    if (!gAutoRefresh || (support->updateDelay == MENU_UPD_DELAY_NOUPDATE))
-        ioPutRequest(IO_MENU_UPDATE_DEFFERED, &support->mode);
+    switch (mode) {
+        case HDD_MODE:
+            return gEnableHDD ? 1 : 0;
+        case BDM_MODE:
+            return gEnableUDPBD ? 1 : 0;
+        case BDM_MODE1:
+            return gEnableUSB ? 1 : 0;
+        case BDM_MODE2:
+            return gEnableMX4SIO ? 1 : 0;
+        default:
+            return 0;
+    }
+}
+
+static int getFirstPriorityMode(void)
+{
+    if (gEnableHDD)
+        return HDD_MODE;
+    if (gEnableUDPBD)
+        return BDM_MODE;
+    if (gEnableUSB)
+        return BDM_MODE1;
+    if (gEnableMX4SIO)
+        return BDM_MODE2;
+    return BDM_MODE;
+}
+
+const char *oplGetActiveSourceTag(int mode)
+{
+    switch (mode) {
+        case HDD_MODE:
+            return "HDD";
+        case BDM_MODE:
+            return "UDPBD";
+        case BDM_MODE1:
+            return "USB";
+        case BDM_MODE2:
+            return "MX4SIO";
+        default:
+            return "";
+    }
+}
+
+int oplIsTabConnected(int mode)
+{
+    switch (mode) {
+        case HDD_MODE:
+            if (list_support[HDD_MODE].support != NULL && list_support[HDD_MODE].support != hddGetObject(0))
+                return bdmIsDriverConnected(BDM_TYPE_ATA);
+            return hddIsConnectedStatus();
+        case BDM_MODE:
+            return bdmIsDriverConnected(BDM_TYPE_UDPBD);
+        case BDM_MODE1:
+            return bdmIsDriverConnected(BDM_TYPE_USB);
+        case BDM_MODE2:
+            return bdmIsDriverConnected(BDM_TYPE_SDC);
+        default:
+            return 0;
+    }
+}
+
+int oplIsTabProbing(int mode)
+{
+    switch (mode) {
+        case HDD_MODE:
+            if (list_support[HDD_MODE].support != NULL && list_support[HDD_MODE].support != hddGetObject(0))
+                return bdmIsDriverProbing(BDM_TYPE_ATA);
+            return 0;
+        case BDM_MODE:
+            return bdmIsDriverProbing(BDM_TYPE_UDPBD);
+        case BDM_MODE1:
+            return bdmIsDriverProbing(BDM_TYPE_USB);
+        case BDM_MODE2:
+            return bdmIsDriverProbing(BDM_TYPE_SDC);
+        default:
+            return 0;
+    }
+}
+
+static void registerSingleTab(item_list_t *itemList, int mode, int visible)
+{
+    opl_io_module_t *mod = &list_support[mode];
+    mod->support = itemList;
+    mod->support->mode = mode;
+    mod->support->owner = mod;
+    initMenuForListSupport(mod);
+    mod->menuItem.visible = visible ? 1 : 0;
+}
+
+static void activateTabInternal(int mode, int forceProbe)
+{
+    if (mode < 0 || mode >= MODE_COUNT)
+        return;
+
+    opl_io_module_t *mod = &list_support[mode];
+    if (!mod->support)
+        return;
+
+    gActiveDeviceMode = mode;
+
+    if (mode == HDD_MODE) {
+        hddSuppressErrorPopups(1);
+        hddLoadModules();
+
+        item_list_t *targetSup = hddGetObject(0);
+        if (hddIsPresent() && hddDetectNonSonyFileSystem() == 1) {
+            targetSup = bdmGetDriverObject(BDM_TYPE_ATA, HDD_MODE);
+        }
+
+        if (mod->support != targetSup) {
+            clearMenuGameList(mod);
+            mod->support = targetSup;
+            mod->support->mode = HDD_MODE;
+            mod->support->owner = mod;
+            mod->menuItem.userdata = mod->support;
+            mod->menuItem.icon_id = mod->support->itemIconId(mod->support);
+            mod->menuItem.text_id = mod->support->itemTextId(mod->support);
+        }
+    }
+
+    if (!mod->support->enabled || forceProbe) {
+        if (mode == BDM_MODE)
+            bdmEnsureDriverLoaded(BDM_TYPE_UDPBD);
+        mod->support->itemInit(mod->support);
+    } else if (mode != HDD_MODE) {
+        bdm_device_data_t *p = (bdm_device_data_t *)mod->support->priv;
+        if (p)
+            bdmResetDriverProbe(p->bdmDeviceType);
+    } else {
+        hddResetProbe();
+    }
+
+    moduleUpdateMenuInternal(mod, 0, 0);
+    ioPutRequest(IO_MENU_UPDATE_DEFFERED, &mod->support->mode);
+}
+
+static void deferredSelectTab(void)
+{
+    int mode = gPendingTabMode;
+    if (mode >= 0 && mode == gActiveDeviceMode)
+        activateTabInternal(mode, 0);
+}
+
+void oplOnTabSelected(int mode)
+{
+    gActiveDeviceMode = mode;
+    gPendingTabMode = mode;
+    ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredSelectTab);
 }
 
 static void itemExecSelect(struct menu_item *curMenu)
@@ -276,31 +418,20 @@ static void itemExecSelect(struct menu_item *curMenu)
     sfxPlay(SFX_CONFIRM);
 
     if (support) {
-        if (support->enabled) {
-            if (curMenu->current) {
-                bgmSetBlocked(1);
-                bgmStop();
-                guiSetLaunchSplash(1);
-                guiDrawLaunchSplashFrame();
+        if (support->enabled && curMenu->current) {
+            bgmSetBlocked(1);
+            bgmStop();
+            guiSetLaunchSplash(1);
+            guiDrawLaunchSplashFrame();
 
-                config_set_t *configSet = menuLoadConfig();
-                if (configSet != NULL && menuCheckGameParentalLock(configSet) == 0)
-                    support->itemLaunch(support, curMenu->current->item.id, configSet);
+            config_set_t *configSet = menuLoadConfig();
+            if (configSet != NULL && menuCheckGameParentalLock(configSet) == 0)
+                support->itemLaunch(support, curMenu->current->item.id, configSet);
 
-                guiSetLaunchSplash(0);
-                bgmSetBlocked(0);
-                if (gEnableBGM && !isBgmPlaying())
-                    bgmStartAsync();
-            }
-        } else {
-            if (support->mode == BDM_MODE) {
-                for (int i = 0; i <= BDM_MODE4; i++) {
-                    opl_io_module_t *mod = &list_support[i];
-                    itemInitSupport(mod->support);
-                }
-            } else {
-                itemInitSupport(support);
-            }
+            guiSetLaunchSplash(0);
+            bgmSetBlocked(0);
+            if (gEnableBGM && !isBgmPlaying())
+                bgmStartAsync();
         }
     } else
         guiMsgBox("NULL Support object. Please report", 0, NULL);
@@ -309,10 +440,25 @@ static void itemExecSelect(struct menu_item *curMenu)
 static void itemExecRefresh(struct menu_item *curMenu)
 {
     item_list_t *support = curMenu->userdata;
+    if (!support)
+        return;
 
-    if (support && support->enabled) {
+    sfxPlay(SFX_CONFIRM);
+    opl_io_module_t *mod = &list_support[support->mode];
+    clearMenuGameList(mod);
+
+    if (support->mode == HDD_MODE) {
+        hddResetProbe();
+        bdmResetDriverProbe(BDM_TYPE_ATA);
+        gPendingTabMode = HDD_MODE;
+        gActiveDeviceMode = HDD_MODE;
+        ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredSelectTab);
+    } else {
+        bdm_device_data_t *p = (bdm_device_data_t *)support->priv;
+        if (p)
+            bdmResetDriverProbe(p->bdmDeviceType);
+        gActiveDeviceMode = support->mode;
         ioPutRequest(IO_MENU_UPDATE_DEFFERED, &support->mode);
-        sfxPlay(SFX_CONFIRM);
     }
 }
 
@@ -408,42 +554,43 @@ static void clearMenuGameList(opl_io_module_t *mdl)
 void initSupport(item_list_t *itemList, int mode, int force_reinit)
 {
     opl_io_module_t *mod = &list_support[mode];
-
-    int startMode = 0;
-    if (mode >= BDM_MODE && mode < ETH_MODE)
-        startMode = gBDMStartMode;
-    else if (mode == ETH_MODE)
-        startMode = gETHStartMode;
-    else if (mode == HDD_MODE)
-        startMode = gHDDStartMode;
-    else if (mode == APP_MODE)
-        startMode = gAPPStartMode;
-    else if (mode == MMCE_MODE)
-        startMode = gMMCEStartMode;
-
-    if (startMode) {
-        if (!mod->support) {
-            mod->support = itemList;
-            mod->support->owner = mod;
-            initMenuForListSupport(mod);
-        }
-
-        if (((force_reinit) && (mod->support->enabled)) || (startMode == START_MODE_AUTO && !mod->support->enabled)) {
-            mod->support->itemInit(mod->support);
-            moduleUpdateMenuInternal(mod, 0, 0);
-
-            ioPutRequest(IO_MENU_UPDATE_DEFFERED, &list_support[mode].support->mode);
-        }
-    } else {
-        mod->menuItem.visible = 0;
+    if (!mod->support) {
+        mod->support = itemList;
+        mod->support->mode = mode;
+        mod->support->owner = mod;
+        initMenuForListSupport(mod);
     }
+    mod->menuItem.visible = isTabModeEnabled(mode);
 }
 
 static void initAllSupport(int force_reinit)
 {
     bdmEnumerateDevices();
-    initSupport(hddGetObject(0), HDD_MODE, force_reinit);
-    initSupport(mmceGetObject(0), MMCE_MODE, force_reinit);
+    hddSuppressErrorPopups(1);
+
+    if (!gEnableHDD && !gEnableUDPBD && !gEnableUSB && !gEnableMX4SIO)
+        gEnableUDPBD = 1;
+
+    if (!gTabsRegistered) {
+        gTabsRegistered = 1;
+        // Strict priority order: 1. HDD -> 2. UDPBD -> 3. USB -> 4. MX4SIO
+        registerSingleTab(hddGetObject(0), HDD_MODE, gEnableHDD);
+        registerSingleTab(bdmGetDriverObject(BDM_TYPE_UDPBD, BDM_MODE), BDM_MODE, gEnableUDPBD);
+        registerSingleTab(bdmGetDriverObject(BDM_TYPE_USB, BDM_MODE1), BDM_MODE1, gEnableUSB);
+        registerSingleTab(bdmGetDriverObject(BDM_TYPE_SDC, BDM_MODE2), BDM_MODE2, gEnableMX4SIO);
+    } else {
+        list_support[HDD_MODE].menuItem.visible = gEnableHDD ? 1 : 0;
+        list_support[BDM_MODE].menuItem.visible = gEnableUDPBD ? 1 : 0;
+        list_support[BDM_MODE1].menuItem.visible = gEnableUSB ? 1 : 0;
+        list_support[BDM_MODE2].menuItem.visible = gEnableMX4SIO ? 1 : 0;
+    }
+
+    int targetMode = gActiveDeviceMode;
+    if (targetMode < 0 || !isTabModeEnabled(targetMode))
+        targetMode = getFirstPriorityMode();
+
+    gDefaultDevice = targetMode;
+    activateTabInternal(targetMode, force_reinit);
 }
 
 static void deinitAllSupport(int exception, int modeSelected)
@@ -711,12 +858,16 @@ void menuDeferredUpdate(void *data)
 {
     short int *mode = data;
 
+    if (*mode != gActiveDeviceMode)
+        return;
+
     opl_io_module_t *mod = &list_support[*mode];
     if (!mod->support)
         return;
 
     if (mod->support->itemNeedsUpdate(mod->support)) {
         updateMenuFromGameList(mod);
+        moduleUpdateMenuInternal(mod, 0, 0);
 
         if (mod->support->mode != APP_MODE)
             shouldAppsUpdate = 1;
@@ -727,23 +878,19 @@ void menuDeferredUpdate(void *data)
 
 static void menuUpdateHook()
 {
-    int i;
-
     frameCounter++;
 
-    if (gAutoRefresh) {
-        for (i = 0; i < MODE_COUNT; i++) {
-            if ((list_support[i].support && list_support[i].support->enabled) && ((list_support[i].support->updateDelay > 0) && (frameCounter % list_support[i].support->updateDelay == 0)))
-                ioPutRequest(IO_MENU_UPDATE_DEFFERED, &list_support[i].support->mode);
-        }
-    }
+    if (gActiveDeviceMode < 0 || gActiveDeviceMode >= MODE_COUNT)
+        return;
 
-    if (frameCounter % MENU_GENERAL_UPDATE_DELAY == 0) {
-        for (i = 0; i < MODE_COUNT; i++) {
-            if ((list_support[i].support && list_support[i].support->enabled) && (list_support[i].support->updateDelay == 0))
-                ioPutRequest(IO_MENU_UPDATE_DEFFERED, &list_support[i].support->mode);
-        }
-    }
+    item_list_t *sup = list_support[gActiveDeviceMode].support;
+    if (!sup || !sup->enabled)
+        return;
+
+    if (gAutoRefresh && sup->updateDelay > 0 && (frameCounter % sup->updateDelay == 0))
+        ioPutRequest(IO_MENU_UPDATE_DEFFERED, &sup->mode);
+    else if (sup->updateDelay == 0 && (frameCounter % MENU_GENERAL_UPDATE_DELAY == 0))
+        ioPutRequest(IO_MENU_UPDATE_DEFFERED, &sup->mode);
 }
 
 static void clearErrorMessage(void)
@@ -801,7 +948,9 @@ static int checkLoadConfigBDM(int types)
         configSetInt(configOPL, CONFIG_OPL_BDM_MODE, START_MODE_AUTO);
         if (is_hdd != 0) {
             gEnableBdmHDD = 1;
+            gEnableHDD = 1;
             configSetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, gEnableBdmHDD);
+            configSetInt(configOPL, CONFIG_OPL_ENABLE_HDD, gEnableHDD);
         }
         return value;
     }
@@ -931,17 +1080,17 @@ static int tryAlternateDevice(int types)
     char bdmRoot[8];
     DIR *dir;
 
+    if (sysCheckMC() >= 0) {
+        configPrepareNotifications(gBaseMCDir);
+        showCfgPopup = 0;
+        return 0;
+    }
     if ((value = checkLoadConfigBDM(types)) != 0)
         return value;
     if ((value = checkLoadConfigHDD(types)) != 0)
         return value;
 
     if (trySetBootHome()) {
-        showCfgPopup = 0;
-        return 0;
-    }
-    if (sysCheckMC() >= 0) {
-        configPrepareNotifications(gBaseMCDir);
         showCfgPopup = 0;
         return 0;
     }
@@ -1027,10 +1176,22 @@ static void _loadConfig()
             configGetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, &gEnableMX4SIO);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, &gEnableBdmHDD);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_UDPBD, &gEnableUDPBD);
+            configGetInt(configOPL, CONFIG_OPL_ENABLE_USB, &gEnableUSB);
+            if (!configGetInt(configOPL, CONFIG_OPL_ENABLE_HDD, &gEnableHDD)) {
+                if (gHDDStartMode != START_MODE_DISABLED || gEnableBdmHDD)
+                    gEnableHDD = 1;
+            }
+            if (!gEnableHDD && !gEnableUDPBD && !gEnableUSB && !gEnableMX4SIO)
+                gEnableUDPBD = 1;
+
             configGetInt(configOPL, CONFIG_OPL_BGM, &gEnableBGM);
             configGetInt(configOPL, CONFIG_OPL_BGM_VOLUME, &gBGMVolume);
             configGetStrCopy(configOPL, CONFIG_OPL_DEFAULT_BGM_PATH, gDefaultBGMPath, sizeof(gDefaultBGMPath));
 
+            gHDDStartMode = gEnableHDD ? START_MODE_AUTO : START_MODE_DISABLED;
+            gEnableBdmHDD = gEnableHDD;
+            gBDMStartMode = START_MODE_AUTO;
+            gMMCEStartMode = START_MODE_DISABLED;
             gETHStartMode = START_MODE_DISABLED;
             gAPPStartMode = START_MODE_DISABLED;
             gEnableILK = 0;
@@ -1204,6 +1365,8 @@ static void _saveConfig()
         configSetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, gEnableMX4SIO);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, gEnableBdmHDD);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_UDPBD, gEnableUDPBD);
+        configSetInt(configOPL, CONFIG_OPL_ENABLE_USB, gEnableUSB);
+        configSetInt(configOPL, CONFIG_OPL_ENABLE_HDD, gEnableHDD);
         configSetInt(configOPL, CONFIG_OPL_SFX, gEnableSFX);
         configSetInt(configOPL, CONFIG_OPL_BOOT_SND, gEnableBootSND);
         configSetInt(configOPL, CONFIG_OPL_BGM, gEnableBGM);
@@ -1257,7 +1420,7 @@ static void _saveConfig()
 void applyConfig(int themeID, int langID, int skipDeviceRefresh)
 {
     if (gDefaultDevice < 0 || gDefaultDevice > MMCE_MODE)
-        gDefaultDevice = MMCE_MODE;
+        gDefaultDevice = BDM_MODE;
 
     guiUpdateScrollSpeed();
 
@@ -1283,6 +1446,12 @@ void applyConfig(int themeID, int langID, int skipDeviceRefresh)
                 continue;
 
             moduleUpdateMenuInternal(&list_support[i], changed, langChanged);
+        }
+
+        if (gActiveDeviceMode >= 0 && list_support[gActiveDeviceMode].support) {
+            struct gui_update_t *id = guiOpCreate(GUI_OP_SELECT_MENU);
+            id->menu.menu = &list_support[gActiveDeviceMode].menuItem;
+            guiDeferUpdate(id);
         }
     } else {
         if (changed) {
@@ -1367,6 +1536,8 @@ static void compatUpdate(item_list_t *support, unsigned char mode, config_set_t 
 
     switch (support->mode) {
         case BDM_MODE:
+        case BDM_MODE1:
+        case BDM_MODE2:
             device = 3;
             break;
         case ETH_MODE:
@@ -1733,6 +1904,10 @@ static void setDefaults(void)
     for (int i = 0; i < MODE_COUNT; i++)
         clearIOModuleT(&list_support[i]);
 
+    gActiveDeviceMode = -1;
+    gPendingTabMode = -1;
+    gTabsRegistered = 0;
+
     gAutoLaunchGame = NULL;
     gAutoLaunchBDMGame = NULL;
     gAutoLaunchDeviceData = NULL;
@@ -1797,7 +1972,7 @@ static void setDefaults(void)
     gEnableBGM = 1;
     gSFXVolume = 80;
     gBootSndVolume = 80;
-    gBGMVolume = 95;
+    gBGMVolume = 75;
     gDefaultBGMPath[0] = '\0';
     gXSensitivity = 1;
     gYSensitivity = 1;
@@ -1813,9 +1988,11 @@ static void setDefaults(void)
     gMMCEEnableGameID = 1;
 
     gEnableILK = 0;
-    gEnableMX4SIO = 0;
+    gEnableHDD = 0;
     gEnableBdmHDD = 0;
     gEnableUDPBD = 1;
+    gEnableUSB = 1;
+    gEnableMX4SIO = 1;
 
     frameCounter = 0;
 
@@ -1885,9 +2062,10 @@ static void deferredInit(void)
     struct gui_update_t *id = guiOpCreate(GUI_INIT_DONE);
     guiDeferUpdate(id);
 
-    if (list_support[gDefaultDevice].support) {
+    int initialTab = (gActiveDeviceMode >= 0) ? gActiveDeviceMode : gDefaultDevice;
+    if (list_support[initialTab].support) {
         id = guiOpCreate(GUI_OP_SELECT_MENU);
-        id->menu.menu = &list_support[gDefaultDevice].menuItem;
+        id->menu.menu = &list_support[initialTab].menuItem;
         guiDeferUpdate(id);
     }
 }
@@ -1924,6 +2102,7 @@ static void miniInit(int mode)
         gEnableILK = 1;
         gEnableMX4SIO = 1;
         gEnableBdmHDD = 1;
+        gEnableHDD = 1;
         bdmLoadModules();
 
     } else if (mode == HDD_MODE) {
