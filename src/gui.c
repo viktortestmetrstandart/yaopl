@@ -276,19 +276,7 @@ void guiDrawLaunchSplashFrame(void)
 void guiShowAbout()
 {
     diaSetLabel(diaAbout, ABOUT_TITLE, "Open PS2 Loader " OPL_VERSION);
-
-    diaSetLabel(diaAbout, ABOUT_BUILD_DETAILS, "GSM " GSM_VERSION " - UDMA+"
-#ifdef __RTL
-                                               " - RTL"
-#endif
-#ifdef IGS
-                                               " - IGS " IGS_VERSION
-#endif
-#ifdef PADEMU
-                                               " - PADEMU"
-#endif
-    );
-
+    diaSetLabel(diaAbout, ABOUT_BUILD_DETAILS, "GraShara");
     diaExecuteDialog(diaAbout, -1, 1, NULL);
 }
 
