@@ -851,8 +851,7 @@ static void drawMenuText(struct menu_list *menu, struct submenu_list *item, conf
 
 static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
-    item_list_t *itemList = menu->item->userdata;
-    if (itemList->mode >= ETH_MODE || menu->item->visible == 0)
+    if (menu->item->visible == 0)
         return;
 
     struct menu_list *cur = menu;
@@ -861,7 +860,7 @@ static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, conf
 
     int count = 0, pos = 0;
     for (; cur; cur = cur->next) {
-        if (cur->item->visible && ((item_list_t *)cur->item->userdata)->mode < ETH_MODE) {
+        if (cur->item->visible) {
             if (cur == menu)
                 pos = count;
             count++;
@@ -872,10 +871,10 @@ static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, conf
         return;
 
     char imgName[32];
-    if (count < MAX_BDM_DEVICES && !gTheme->bdmIndexFixed)
+    if (count <= 4 && !gTheme->bdmIndexFixed)
         snprintf(imgName, sizeof(imgName), "Index%d_%d", count, pos);
     else
-        snprintf(imgName, sizeof(imgName), "Index_%d", itemList->mode);
+        snprintf(imgName, sizeof(imgName), "Index_%d", pos);
 
     GSTEXTURE *indexTex = thmGetTexture(texLookupInternalTexId(&imgName[0]));
     if (indexTex && indexTex->Mem)
@@ -884,36 +883,48 @@ static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, conf
 
 static const char *getEmptyListMessage(struct menu_list *menu)
 {
-    int lang = 0; // 0 = UKR, 1 = RUS, 2 = ENG
-    if (lngGetGuiValue() > 0 && lngGetValue() != NULL) {
-        if (strcasecmp(lngGetValue(), "Russian") == 0)
-            lang = 1;
-        else
-            lang = 2;
-    }
-
     item_list_t *support = (item_list_t *)menu->item->userdata;
-    int waiting = (support == NULL) || (!support->enabled) || ioHasPendingRequests();
-    if (support && support->mode < ETH_MODE && menu->item->visible == 0)
-        waiting = 1;
+    if (!support || menu->item->visible == 0)
+        return _l(_STR_ALL_DEVICES_DISABLED);
 
-    if (waiting) {
-        if (lang == 1)
-            return "Ожидание подключения\nносителя / UDPBD...";
-        if (lang == 2)
-            return "Waiting for device\nor UDPBD...";
-        return "Очікування підключення\nносія / UDPBD...";
-    } else {
-        if (lang == 1)
-            return "Игр не найдено";
-        if (lang == 2)
-            return "No games found";
-        return "Ігор не знайдено";
+    int mode = support->mode;
+    int connected = oplIsTabConnected(mode);
+    int probing = oplIsTabProbing(mode);
+
+    if (mode == BDM_MODE) {
+        // UDPBD: wait continuously until server replies; if connected but no games, show No games found
+        return connected ? _l(_STR_NO_GAMES_FOUND) : _l(_STR_WAIT_STORAGE);
     }
+
+    if (probing)
+        return _l(_STR_WAIT_STORAGE);
+
+    if (connected)
+        return _l(_STR_NO_GAMES_FOUND);
+
+    if (mode == HDD_MODE)
+        return _l(_STR_HDD_NOT_FOUND_MSG);
+    if (mode == BDM_MODE1)
+        return _l(_STR_USB_NOT_FOUND_MSG);
+    if (mode == BDM_MODE2)
+        return _l(_STR_MX4SIO_NOT_FOUND_MSG);
+
+    return _l(_STR_NO_GAMES_FOUND);
 }
 
 static void drawItemsList(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
+    if (elem == gTheme->gamesItemsList) {
+        item_list_t *support = (item_list_t *)menu->item->userdata;
+        const char *tag = support ? oplGetActiveSourceTag(support->mode) : "";
+        char hdr[64];
+        if (tag && tag[0] != '\0')
+            snprintf(hdr, sizeof(hdr), "%s [%s]", _l(_STR_GAMES_HEADER), tag);
+        else
+            snprintf(hdr, sizeof(hdr), "%s", _l(_STR_GAMES_HEADER));
+        fntRenderString(elem->font, elem->posX, elem->posY - 24, ALIGN_NONE, 0, 0, hdr, gTheme->selTextColor);
+    }
+
     if (item) {
         items_list_t *itemsList = (items_list_t *)elem->extended;
 
@@ -949,19 +960,28 @@ static void drawItemsList(struct menu_list *menu, struct submenu_list *item, con
         }
     } else {
         const char *msg = getEmptyListMessage(menu);
-        char buf[128];
+        char buf[160];
         strncpy(buf, msg, sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
+        fntFitString(elem->font, buf, elem->width > 40 ? (elem->width - 20) : elem->width);
 
         int cx = elem->aligned ? elem->posX : (elem->posX + (elem->width >> 1));
         int cy = elem->aligned ? elem->posY : (elem->posY + (elem->height >> 1));
-        char *nl = strchr(buf, '\n');
-        if (nl != NULL) {
-            *nl++ = '\0';
-            fntRenderString(elem->font, cx, cy - (MENU_ITEM_HEIGHT >> 1), ALIGN_CENTER, 0, 0, buf, elem->color);
-            fntRenderString(elem->font, cx, cy + (MENU_ITEM_HEIGHT >> 1), ALIGN_CENTER, 0, 0, nl, elem->color);
-        } else {
-            fntRenderString(elem->font, cx, cy, ALIGN_CENTER, 0, 0, buf, elem->color);
+
+        int lines = 1;
+        char *p;
+        for (p = buf; (p = strchr(p, '\n')) != NULL; p++)
+            lines++;
+
+        int y = cy - (((lines - 1) * MENU_ITEM_HEIGHT) >> 1);
+        char *line = buf, *next;
+        while (line != NULL) {
+            next = strchr(line, '\n');
+            if (next != NULL)
+                *next++ = '\0';
+            fntRenderString(elem->font, cx, y, ALIGN_CENTER, 0, 0, line, elem->color);
+            y += MENU_ITEM_HEIGHT;
+            line = next;
         }
     }
 }
