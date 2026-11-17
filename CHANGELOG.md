@@ -4,7 +4,7 @@ What changed in YAOPL (Yet Another Open PS2 Loader), newest first; below it, wha
 Loader (OPL) before the fork.
 
 ## Unreleased
-- Custom minimal OPL build: external BGM/assets in mc?:OPL/DATA, early logo, custom launch splash, cleaned UI
+- Custom minimal OPL build: external BGM/assets in mc?:OPL/DATA, early logo, custom launch splash
 - Localization and Branding: Replace built-in splash logo, add Ukrainian as built-in default language with
   Cyrillic-capable default font, and set default BGM volume to 95.
 - Defaults: Enable BDM (USB + UDPBD), cover/disc art, static network settings (192.168.1.10, 100M FDX) and
