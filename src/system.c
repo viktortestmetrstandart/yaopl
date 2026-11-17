@@ -251,7 +251,7 @@ void sysReset(int modload_mask)
     sysLoadModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL);
 
     if (modload_mask & SYS_LOAD_USB_MODULES) {
-        bdmLoadModules();
+        bdmLoadBasicModules();
     }
     if (modload_mask & SYS_LOAD_ISOFS_MODULE) {
         LOG("[ISOFS]:\n");
