@@ -1274,10 +1274,10 @@ void menuRenderAppMenu()
     int y = (gTheme->usedHeight >> 1) - (spacing * (count >> 1));
     int cp = 0;
 
-    menuRenderCenteredItem(y, submenuItemGetText(&it->item), cp == sitem);
+    fntRenderString(gTheme->fonts[0], 320, 20, ALIGN_CENTER, 0, 0, selected_item->item->current->item.text, gTheme->selTextColor);
 
     for (it = appMenu; it; it = it->next, cp++) {
-        fntRenderString(gTheme->fonts[0], 320, y, ALIGN_CENTER, 0, 0, submenuItemGetText(&it->item), (cp == sitem) ? gTheme->selTextColor : gTheme->textColor);
+        menuRenderCenteredItem(y, submenuItemGetText(&it->item), cp == sitem);
         y += spacing;
     }
 
