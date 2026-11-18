@@ -905,8 +905,8 @@ static void drawTopHeaderBadge(int font, char *headerText)
 
     int bx = cx - (bw >> 1);
 
-    u64 bgCol = GS_SETREG_RGBA(0x10, 0x18, 0x24, 0x60);
-    u64 grayLine = GS_SETREG_RGBA(0x48, 0xB0, 0xE8, 0x80);
+    u64 bgCol = GS_SETREG_RGBA(0x18, 0x18, 0x18, 0x58);
+    u64 grayLine = GS_SETREG_RGBA(0x38, 0x38, 0x38, 0x80);
     u64 lightGreen = GS_SETREG_RGBA(0x90, 0xFF, 0x9E, 0x80);
 
     // Side horizontal lines extending left and right from the rounded frame
