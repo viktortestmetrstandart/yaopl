@@ -803,9 +803,52 @@ static void initBackground(const char *themePath, config_set_t *themeConfig, the
 
 static void drawMenuIcon(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
-    GSTEXTURE *menuIconTex = thmGetTexture(menu->item->icon_id);
-    if (menuIconTex && menuIconTex->Mem)
-        rmDrawPixmap(menuIconTex, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
+    (void)menu;
+    (void)item;
+    (void)config;
+
+    int step = rmWideScale(58);
+    int startX = elem->posX - ((step * 3) >> 1);
+
+    for (int slot = 0; slot < 4; slot++) {
+        int iconId = -1, isEnabled = 0, isSelected = 0;
+        if (!oplGetTabIconBySlot(slot, &iconId, &isEnabled, &isSelected))
+            continue;
+
+        GSTEXTURE *tex = thmGetTexture(iconId);
+        if (!tex || !tex->Mem)
+            continue;
+
+        int x = startX + slot * step;
+        int w = tex->Width;
+        int h = tex->Height;
+        if (w > 42 || h > 42) {
+            if (w >= h) {
+                h = (h * 42) / w;
+                w = 42;
+            } else {
+                w = (w * 42) / h;
+                h = 42;
+            }
+        }
+
+        u64 col;
+        if (isSelected)
+            col = GS_SETREG_RGBA(0x80, 0x80, 0x80, 0x80);
+        else if (isEnabled)
+            col = GS_SETREG_RGBA(0x42, 0x42, 0x42, 0x80);
+        else
+            col = GS_SETREG_RGBA(0x20, 0x20, 0x20, 0x38);
+
+        rmDrawPixmap(tex, x, elem->posY, ALIGN_CENTER, w, h, SCALING_RATIO, col);
+
+        if (isSelected) {
+            int barW = rmWideScale(30);
+            int barY = elem->posY + (h >> 1) + 4;
+            u64 glowCol = GS_SETREG_RGBA(0x00, 0xAE, 0xFF, 0x80);
+            rmDrawRect(x - (barW >> 1), barY, barW, 2, glowCol);
+        }
+    }
 }
 
 static int findMenuNext(struct menu_list *menu)
