@@ -139,6 +139,7 @@ void oplOnTabSelected(int mode);
 const char *oplGetActiveSourceTag(int mode);
 int oplIsTabConnected(int mode);
 int oplIsTabProbing(int mode);
+int oplGetTabIconBySlot(int slot, int *iconId, int *isEnabled, int *isSelected);
 
 extern int gAutosort;
 extern int gAutoRefresh;
