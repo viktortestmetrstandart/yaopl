@@ -894,34 +894,86 @@ static void drawMenuText(struct menu_list *menu, struct submenu_list *item, conf
 
 static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
-    if (menu->item->visible == 0)
-        return;
+    // All 4 device slots are shown directly by drawMenuIcon()
+    (void)menu;
+    (void)item;
+    (void)config;
+    (void)elem;
+}
 
-    struct menu_list *cur = menu;
-    while (cur->prev)
-        cur = cur->prev;
+int thmCalcWrappedItemLines(int font, const char *text, int maxWidth, char *outBuf, int outSize)
+{
+    if (!text || outSize <= 0)
+        return 1;
 
-    int count = 0, pos = 0;
-    for (; cur; cur = cur->next) {
-        if (cur->item->visible) {
-            if (cur == menu)
-                pos = count;
-            count++;
+    strncpy(outBuf, text, outSize - 1);
+    outBuf[outSize - 1] = '\0';
+    fntFitString(font, outBuf, maxWidth > 8 ? maxWidth : 8);
+
+    int lines = 1;
+    char *p = outBuf;
+    while ((p = strchr(p, '\n')) != NULL) {
+        lines++;
+        if (lines > 2) {
+            int len = (int)(p - outBuf);
+            if (len >= 3) {
+                outBuf[len - 3] = '.';
+                outBuf[len - 2] = '.';
+                outBuf[len - 1] = '.';
+            }
+            *p = '\0';
+            lines = 2;
+            break;
         }
+        p++;
     }
+    return lines;
+}
 
-    if (count < 2)
-        return;
+static void drawGamesGreenFrame(int font, char *headerText)
+{
+    const int fx = GAMES_FRAME_X;
+    const int fy = GAMES_FRAME_Y;
+    const int fw = GAMES_FRAME_W;
+    const int fh = GAMES_FRAME_H;
 
-    char imgName[32];
-    if (count <= 4 && !gTheme->bdmIndexFixed)
-        snprintf(imgName, sizeof(imgName), "Index%d_%d", count, pos);
-    else
-        snprintf(imgName, sizeof(imgName), "Index_%d", pos);
+    u64 bgFill = GS_SETREG_RGBA(0x07, 0x16, 0x0B, 0x44);
+    u64 outerGreen = GS_SETREG_RGBA(0x1E, 0x7A, 0x30, 0x80);
+    u64 innerGreen = GS_SETREG_RGBA(0x40, 0xC8, 0x55, 0x80);
+    u64 lightGreen = GS_SETREG_RGBA(0x90, 0xFF, 0x9E, 0x80);
+    u64 badgeBg = GS_SETREG_RGBA(0x0C, 0x24, 0x12, 0x7A);
 
-    GSTEXTURE *indexTex = thmGetTexture(texLookupInternalTexId(&imgName[0]));
-    if (indexTex && indexTex->Mem)
-        rmDrawPixmap(indexTex, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
+    // Translucent dark-green backdrop inside frame
+    rmDrawRect(fx, fy, fw, fh, bgFill);
+
+    // Double border (outer dark green + inner bright green)
+    rmDrawLine(fx, fy, fx + fw, fy, outerGreen);
+    rmDrawLine(fx, fy + fh, fx + fw, fy + fh, outerGreen);
+    rmDrawLine(fx, fy, fx, fy + fh, outerGreen);
+    rmDrawLine(fx + fw, fy, fx + fw, fy + fh, outerGreen);
+
+    rmDrawLine(fx + 1, fy + 1, fx + fw - 1, fy + 1, innerGreen);
+    rmDrawLine(fx + 1, fy + fh - 1, fx + fw - 1, fy + fh - 1, innerGreen);
+    rmDrawLine(fx + 1, fy + 1, fx + 1, fy + fh - 1, innerGreen);
+    rmDrawLine(fx + fw - 1, fy + 1, fx + fw - 1, fy + fh - 1, innerGreen);
+
+    // Centered top header badge with green outline and light-green text
+    int cx = fx + (fw >> 1);
+    int textW = rmUnScaleX(fntCalcDimensions(font, headerText));
+    int badgeW = textW + 20;
+    if (badgeW > fw - 24)
+        badgeW = fw - 24;
+    int badgeH = 20;
+    int bx = cx - (badgeW >> 1);
+    int by = fy - (badgeH >> 1);
+
+    rmDrawRect(bx, by, badgeW, badgeH, badgeBg);
+    rmDrawLine(bx, by, bx + badgeW, by, innerGreen);
+    rmDrawLine(bx, by + badgeH, bx + badgeW, by + badgeH, innerGreen);
+    rmDrawLine(bx, by, bx, by + badgeH, innerGreen);
+    rmDrawLine(bx + badgeW, by, bx + badgeW, by + badgeH, innerGreen);
+
+    fntRenderString(font, cx, fy, ALIGN_CENTER, 0, 0, headerText, lightGreen);
 }
 
 static const char *getEmptyListMessage(struct menu_list *menu)
@@ -935,7 +987,6 @@ static const char *getEmptyListMessage(struct menu_list *menu)
     int probing = oplIsTabProbing(mode);
 
     if (mode == BDM_MODE) {
-        // UDPBD: wait continuously until server replies; if connected but no games, show No games found
         return connected ? _l(_STR_NO_GAMES_FOUND) : _l(_STR_WAIT_STORAGE);
     }
 
@@ -957,59 +1008,106 @@ static const char *getEmptyListMessage(struct menu_list *menu)
 
 static void drawItemsList(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
-    if (elem == gTheme->gamesItemsList) {
+    int isGamesFrame = (elem == gTheme->gamesItemsList);
+    int boxX = isGamesFrame ? GAMES_INNER_X : elem->posX;
+    int boxY = isGamesFrame ? GAMES_INNER_Y : elem->posY;
+    int boxW = isGamesFrame ? GAMES_INNER_W : elem->width;
+    int boxH = isGamesFrame ? GAMES_INNER_H : elem->height;
+
+    if (isGamesFrame) {
         item_list_t *support = (item_list_t *)menu->item->userdata;
         const char *tag = support ? oplGetActiveSourceTag(support->mode) : "";
         char hdr[64];
         if (tag && tag[0] != '\0')
-            snprintf(hdr, sizeof(hdr), "%s [%s]", _l(_STR_GAMES_HEADER), tag);
+            snprintf(hdr, sizeof(hdr), "%s (%s)", _l(_STR_GAMES_HEADER), tag);
         else
             snprintf(hdr, sizeof(hdr), "%s", _l(_STR_GAMES_HEADER));
-        fntRenderString(elem->font, elem->posX, elem->posY - 24, ALIGN_NONE, 0, 0, hdr, gTheme->selTextColor);
+        drawGamesGreenFrame(elem->font, hdr);
     }
 
     if (item) {
         items_list_t *itemsList = (items_list_t *)elem->extended;
-
-        int posX = elem->posX, posY = elem->posY;
-        if (elem->aligned) {
-            posX -= elem->width >> 1;
-            posY -= elem->height >> 1;
+        int posX = boxX;
+        int posY = boxY;
+        if (!isGamesFrame && elem->aligned) {
+            posX -= boxW >> 1;
+            posY -= boxH >> 1;
         }
 
+        int maxBottom = posY + boxH;
+        int textX = itemsList->decoratorImage ? (posX + DECORATOR_SIZE) : posX;
+        int textMaxW = itemsList->decoratorImage ? (boxW - DECORATOR_SIZE) : boxW;
+
         submenu_list_t *ps = menu->item->pagestart;
-        int others = 0;
+        int visibleCount = 0;
         u64 color;
-        while (ps && (others++ < itemsList->displayedItems)) {
-            if (ps == item)
-                color = gTheme->selTextColor;
-            else
-                color = elem->color;
+
+        while (ps) {
+            char wrapped[256];
+            int lines = thmCalcWrappedItemLines(elem->font, submenuItemGetText(&ps->item), textMaxW, wrapped, sizeof(wrapped));
+            int itemH = lines * MENU_ITEM_HEIGHT;
+
+            if (posY + itemH > maxBottom)
+                break;
+
+            color = (ps == item) ? gTheme->selTextColor : elem->color;
 
             if (itemsList->decoratorImage) {
                 GSTEXTURE *itemIconTex = getGameImageTexture(itemsList->decoratorImage->cache, menu->item->userdata, &ps->item);
                 if (itemIconTex && itemIconTex->Mem)
-                    rmDrawPixmap(itemIconTex, posX, posY, elem->aligned, DECORATOR_SIZE, DECORATOR_SIZE, elem->scaled, gDefaultCol);
-                else {
-                    if (itemsList->decoratorImage->defaultTexture)
-                        rmDrawPixmap(&itemsList->decoratorImage->defaultTexture->source, posX, posY, elem->aligned, DECORATOR_SIZE, DECORATOR_SIZE, elem->scaled, gDefaultCol);
-                }
-                fntRenderString(elem->font, elem->posX + DECORATOR_SIZE, posY, elem->aligned, elem->width, elem->height, submenuItemGetText(&ps->item), color);
-            } else
-                fntRenderString(elem->font, elem->posX, posY, elem->aligned, elem->width, elem->height, submenuItemGetText(&ps->item), color);
+                    rmDrawPixmap(itemIconTex, posX, posY, ALIGN_NONE, DECORATOR_SIZE, DECORATOR_SIZE, elem->scaled, gDefaultCol);
+                else if (itemsList->decoratorImage->defaultTexture)
+                    rmDrawPixmap(&itemsList->decoratorImage->defaultTexture->source, posX, posY, ALIGN_NONE, DECORATOR_SIZE, DECORATOR_SIZE, elem->scaled, gDefaultCol);
+            }
 
-            posY += MENU_ITEM_HEIGHT;
+            int lineY = posY;
+            char *line = wrapped, *next;
+            while (line != NULL) {
+                next = strchr(line, '\n');
+                if (next != NULL)
+                    *next++ = '\0';
+                fntRenderString(elem->font, textX, lineY, ALIGN_NONE, textMaxW, MENU_ITEM_HEIGHT, line, color);
+                lineY += MENU_ITEM_HEIGHT;
+                line = next;
+            }
+
+            posY += itemH;
+            visibleCount++;
             ps = ps->next;
+        }
+
+        if (isGamesFrame) {
+            int totalCount = 0, pageStartIdx = 0;
+            submenu_list_t *scan = menu->item->submenu;
+            while (scan) {
+                if (scan == menu->item->pagestart)
+                    pageStartIdx = totalCount;
+                totalCount++;
+                scan = scan->next;
+            }
+            if (totalCount > visibleCount && visibleCount > 0) {
+                int sbX = GAMES_FRAME_X + GAMES_FRAME_W - 7;
+                int sbY = GAMES_INNER_Y;
+                int sbH = GAMES_INNER_H;
+                int thumbH = (sbH * visibleCount) / totalCount;
+                if (thumbH < 18)
+                    thumbH = 18;
+                int maxScroll = totalCount - visibleCount;
+                int thumbY = sbY + ((sbH - thumbH) * pageStartIdx) / (maxScroll > 0 ? maxScroll : 1);
+
+                rmDrawRect(sbX, sbY, 3, sbH, GS_SETREG_RGBA(0x14, 0x42, 0x1E, 0x60));
+                rmDrawRect(sbX, thumbY, 3, thumbH, GS_SETREG_RGBA(0x90, 0xFF, 0x9E, 0x80));
+            }
         }
     } else {
         const char *msg = getEmptyListMessage(menu);
         char buf[160];
         strncpy(buf, msg, sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
-        fntFitString(elem->font, buf, elem->width > 40 ? (elem->width - 20) : elem->width);
+        fntFitString(elem->font, buf, boxW > 32 ? (boxW - 16) : boxW);
 
-        int cx = elem->aligned ? elem->posX : (elem->posX + (elem->width >> 1));
-        int cy = elem->aligned ? elem->posY : (elem->posY + (elem->height >> 1));
+        int cx = boxX + (boxW >> 1);
+        int cy = boxY + (boxH >> 1);
 
         int lines = 1;
         char *p;
@@ -1139,7 +1237,7 @@ static theme_element_t *validateItemsList(const char *themePath, config_set_t *t
         }
     } else {
         LOG("THEMES No itemsList found, adding a default one\n");
-        list = initBasic(themePath, themeConfig, theme, "il", ELEM_TYPE_ITEMS_LIST, 42, 42, ALIGN_NONE, 373, 316, SCALING_RATIO, theme->textColor, theme->fonts[0]);
+        list = initBasic(themePath, themeConfig, theme, "il", ELEM_TYPE_ITEMS_LIST, GAMES_INNER_X, GAMES_INNER_Y, ALIGN_NONE, GAMES_INNER_W, GAMES_INNER_H, SCALING_RATIO, theme->textColor, theme->fonts[0]);
         initItemsList(themePath, themeConfig, theme, list, "il", NULL);
         list->next = mainElems->first->next;
         mainElems->first->next = list;
@@ -1585,7 +1683,6 @@ void thmInit(void)
 
     thmReloadScreenExtents();
 
-    // initialize default internal theme only (no external theme folder scan)
     thmLoad(NULL);
     thmRebuildGuiNames();
 }
