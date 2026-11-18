@@ -4,7 +4,13 @@ What changed in YAOPL (Yet Another Open PS2 Loader), newest first; below it, wha
 Loader (OPL) before the fork.
 
 ## Unreleased
-- Increase UDPBD read retries (60) and retry delay (100 ms) in `download_udpbd.sh` to survive brief USB/network stalls. End outher.
+- Split storage devices into four dedicated tabs in priority order (`HDD` -> `UDPBD` -> `USB` -> `MX4SIO`) with individual enable/disable toggles in Game Devices settings and lazy single-device driver loading.
+- Added `USB` and `HDD` enable/disable options in config (`enable_usb`, `enable_hdd`) and simplified Settings / Game Devices dialogs.
+- Fixed BGM ring-buffer decoding in `src/sound.c` (`bgmIoThread`) to eliminate volume/playback fluctuation and lowered default BGM volume to `75`.
+- Updated UI headers (`GAMES [SOURCE]`), localized empty/waiting/not-detected storage messages, always-visible default cover/disc placeholders when no games are listed, and always-shown `SELECT` refresh hint.
+- Updated About screen (added `MVP` and `Vesper`, removed Quality Assurance section, set Build Options to `GraShara`).
+- Fixed `lang_English.lng` generation into `lng/` using `lng_tmpl/English.yml` and added `lng_tmpl/Russian_override.yml` support in `lang_compiler.py`.
+- Increase UDPBD read retries (60) and retry delay (100 ms) in `download_udpbd.sh` to survive brief USB/network stalls.
 - Custom minimal OPL build: external BGM/assets in mc?:OPL/DATA, early logo, custom launch splash
 - Localization and Branding: Replace built-in splash logo, add Ukrainian as built-in default language with
   Cyrillic-capable default font, and set default BGM volume to 95.
