@@ -222,9 +222,14 @@ int bdmEnsureDriverLoaded(int targetType)
         sysLoadModuleBuffer(&usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL);
         usbModLoaded = 1;
     } else if (targetType == BDM_TYPE_SDC && !mx4sioModLoaded) {
-        LOG("[MX4SIO_BD]:\n");
-        sysLoadModuleBuffer(&mx4sio_bd_irx, size_mx4sio_bd_irx, 0, NULL);
-        mx4sioModLoaded = 1;
+        DIR *mc1_dir = opendir("mc1:/");
+        if (mc1_dir != NULL) {
+            closedir(mc1_dir);
+            LOG("[MX4SIO_BD]: skipped, PS2 Memory Card present in slot 2\n");
+        } else {
+            LOG("[MX4SIO_BD]:\n");
+            sysLoadModuleBuffer(&mx4sio_bd_irx, size_mx4sio_bd_irx, 0, NULL);
+            mx4sioModLoaded = 1;
     } else if (targetType == BDM_TYPE_ATA && !hddModLoaded) {
         LOG("bdmEnsureDriverLoaded loading hdd drivers...\n");
         hddLoadModules();
