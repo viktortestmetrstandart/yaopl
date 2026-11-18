@@ -546,8 +546,9 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
             rmDrawLine(x - 2, y + *h + 4, x + *w + 2, y + *h + 4, bcol);
             rmDrawLine(x - 2, y + 1, x - 2, y + *h + 4, bcol);
             rmDrawLine(x + *w + 2, y + 1, x + *w + 2, y + *h + 4, bcol);
-        } else if (haveFocus && *w > 0) {
-            rmDrawLine(x, y + 18, x + *w, y + 18, gTheme->selTextColor);
+        } else if (*w > 0) {
+            rmDrawLine(x, y - 1, x + *w, y - 1, txtcol);
+            rmDrawLine(x, y + 18, x + *w, y + 18, txtcol);
         }
     }
 
