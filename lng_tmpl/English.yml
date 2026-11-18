@@ -59,7 +59,7 @@ translations:
   LOADING_SETTINGS: Loading config...
   SAVING_SETTINGS: Saving config...
   START_DEVICE: Start Device
-  REFRESH: Refresh devices
+  REFRESH: Refresh
   BDMMODE: BDM Start Mode
   HDDMODE: HDD (APA) Start Mode
   ETHMODE: ETH Start Mode
