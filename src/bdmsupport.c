@@ -230,6 +230,7 @@ int bdmEnsureDriverLoaded(int targetType)
             LOG("[MX4SIO_BD]:\n");
             sysLoadModuleBuffer(&mx4sio_bd_irx, size_mx4sio_bd_irx, 0, NULL);
             mx4sioModLoaded = 1;
+        }
     } else if (targetType == BDM_TYPE_ATA && !hddModLoaded) {
         LOG("bdmEnsureDriverLoaded loading hdd drivers...\n");
         hddLoadModules();
