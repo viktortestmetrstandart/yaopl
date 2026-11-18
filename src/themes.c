@@ -803,49 +803,9 @@ static void initBackground(const char *themePath, config_set_t *themeConfig, the
 
 static void drawMenuIcon(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
-    (void)menu;
-    (void)item;
-    (void)config;
-
-    int step = rmWideScale(135);
-    int startX = elem->posX - ((step * 3) >> 1);
-
-    for (int slot = 0; slot < 4; slot++) {
-        int iconId = -1, isEnabled = 0, isSelected = 0;
-        if (!oplGetTabIconBySlot(slot, &iconId, &isEnabled, &isSelected))
-            continue;
-
-        GSTEXTURE *tex = thmGetTexture(iconId);
-        if (!tex || !tex->Mem)
-            continue;
-
-        int x = startX + slot * step;
-        int w = DIM_UNDEF;
-        int h = DIM_UNDEF;
-
-        if (tex->Width > 125 || tex->Height > 68) {
-            w = tex->Width;
-            h = tex->Height;
-            if (w > 125) {
-                h = (h * 125) / w;
-                w = 125;
-            }
-            if (h > 68) {
-                w = (w * 68) / h;
-                h = 68;
-            }
-        }
-
-        u64 col;
-        if (isSelected)
-            col = gDefaultCol;
-        else if (isEnabled)
-            col = GS_SETREG_RGBA(0x46, 0x46, 0x46, 0x80);
-        else
-            col = GS_SETREG_RGBA(0x28, 0x28, 0x28, 0x44);
-
-        rmDrawPixmap(tex, x, elem->posY, elem->aligned, w, h, elem->scaled, col);
-    }
+    GSTEXTURE *menuIconTex = thmGetTexture(menu->item->icon_id);
+    if (menuIconTex && menuIconTex->Mem)
+        rmDrawPixmap(menuIconTex, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
 }
 
 static int findMenuNext(struct menu_list *menu)
