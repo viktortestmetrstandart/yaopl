@@ -562,9 +562,24 @@ void guiShowConfig()
 
 static int guiUIUpdater(int modified)
 {
-    if (modified) {
-        int temp, x, y;
+    int temp, x, y;
 
+    if (diaGetFocusedId() != UICFG_LANG) {
+        diaGetInt(diaUIConfig, UICFG_LANG, &temp);
+        if (temp != lngGetGuiValue()) {
+            config_set_t *configOPL = configGetByType(CONFIG_OPL);
+            if (temp == 0)
+                configRemoveKey(configOPL, CONFIG_OPL_LANGUAGE);
+            else if (lngGetGuiList()[temp] != NULL)
+                configSetStr(configOPL, CONFIG_OPL_LANGUAGE, lngGetGuiList()[temp]);
+
+            applyConfig(-1, temp, 1);
+            diaSetInt(diaUIConfig, UICFG_LANG, lngGetGuiValue());
+            menuReinitMainMenu();
+        }
+    }
+
+    if (modified) {
         diaGetInt(diaUIConfig, UICFG_XOFF, &x);
         diaGetInt(diaUIConfig, UICFG_YOFF, &y);
         if ((x != gXOff) || (y != gYOff)) {
@@ -613,11 +628,9 @@ void guiShowUIConfig(void)
         , NULL};
     // clang-format on
     int previousVMode;
-    int previousLang;
 
 reselect_video_mode:
     previousVMode = gVMode;
-    previousLang = lngGetGuiValue();
     diaSetEnum(diaUIConfig, UICFG_LANG, (const char **)lngGetGuiList());
     diaSetEnum(diaUIConfig, UICFG_VMODE, vmodeNames);
     diaSetInt(diaUIConfig, UICFG_LANG, lngGetGuiValue());
@@ -644,7 +657,9 @@ reselect_video_mode:
         diaGetInt(diaUIConfig, UICFG_OVERSCAN, &gOverscan);
 
         config_set_t *configOPL = configGetByType(CONFIG_OPL);
-        if (previousLang != langID && lngGetGuiList()[langID] != NULL)
+        if (langID == 0)
+            configRemoveKey(configOPL, CONFIG_OPL_LANGUAGE);
+        else if (lngGetGuiList()[langID] != NULL)
             configSetStr(configOPL, CONFIG_OPL_LANGUAGE, lngGetGuiList()[langID]);
 
         applyConfig(-1, langID, 1);
