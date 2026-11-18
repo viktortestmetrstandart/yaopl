@@ -1157,13 +1157,13 @@ void menuRenderGameMenu()
     int y = (gTheme->usedHeight >> 1) - (spacing * (count >> 1));
     int cp = 0;
 
-    menuRenderCenteredItem(y, submenuItemGetText(&it->item), cp == sitem);
+    fntRenderString(gTheme->fonts[0], 320, 20, ALIGN_CENTER, 0, 0, selected_item->item->current->item.text, gTheme->selTextColor);
 
     char *cfgSource = gameConfigSource();
     fntRenderString(gTheme->fonts[0], 320, 40, ALIGN_CENTER, 0, 0, cfgSource, gTheme->textColor);
 
     for (it = gameMenu; it; it = it->next, cp++) {
-        fntRenderString(gTheme->fonts[0], 320, y, ALIGN_CENTER, 0, 0, submenuItemGetText(&it->item), (cp == sitem) ? gTheme->selTextColor : gTheme->textColor);
+        menuRenderCenteredItem(y, submenuItemGetText(&it->item), cp == sitem);
         y += spacing;
         if (cp == (GAME_SAVE_CHANGES - 1) || cp == (GAME_REMOVE_CHANGES - 1))
             y += spacing / 2;
