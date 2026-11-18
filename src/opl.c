@@ -150,6 +150,7 @@ int gEnableHDD;
 int gActiveDeviceMode = -1;
 static int gPendingTabMode = -1;
 static int gTabsRegistered = 0;
+static int gTabSwitchDelayFrames = 0;
 int gAutosort;
 int gAutoRefresh;
 int gEnableNotifications;
@@ -240,16 +241,16 @@ void moduleUpdateMenuInternal(opl_io_module_t *mod, int themeChanged, int langCh
     menuRemoveHints(&mod->menuItem);
 
     menuAddHint(&mod->menuItem, _STR_MENU, START_ICON);
-    if (mod->menuItem.current) {
-        menuAddHint(&mod->menuItem, _STR_RUN, gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON);
+    menuAddHint(&mod->menuItem, _STR_RUN, gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON);
 
-        if (gTheme->infoElems.first)
-            menuAddHint(&mod->menuItem, _STR_INFO, SQUARE_ICON);
+    if (gTheme->infoElems.first)
+        menuAddHint(&mod->menuItem, _STR_INFO, SQUARE_ICON);
 
-        if (!(mod->support->flags & MODE_FLAG_NO_COMPAT) || gEnableWrite)
-            menuAddHint(&mod->menuItem, _STR_OPTIONS, TRIANGLE_ICON);
-    }
-    menuAddHint(&mod->menuItem, _STR_REFRESH, SELECT_ICON);
+    if (!(mod->support->flags & MODE_FLAG_NO_COMPAT) || gEnableWrite)
+        menuAddHint(&mod->menuItem, _STR_OPTIONS, TRIANGLE_ICON);
+
+    if (mod->support->mode != HDD_MODE)
+        menuAddHint(&mod->menuItem, _STR_REFRESH, SELECT_ICON);
 
     if (themeChanged) {
         if (mod->subMenu)
@@ -341,6 +342,41 @@ int oplIsTabProbing(int mode)
     }
 }
 
+int oplGetTabIconBySlot(int slot, int *iconId, int *isEnabled, int *isSelected)
+{
+    int mode = -1;
+    int icon = -1;
+
+    switch (slot) {
+        case 0:
+            mode = HDD_MODE;
+            icon = HDD_ICON;
+            break;
+        case 1:
+            mode = BDM_MODE;
+            icon = UDPBD_ICON;
+            break;
+        case 2:
+            mode = BDM_MODE1;
+            icon = USB_ICON;
+            break;
+        case 3:
+            mode = BDM_MODE2;
+            icon = MX4SIO_ICON;
+            break;
+        default:
+            return 0;
+    }
+
+    if (iconId)
+        *iconId = icon;
+    if (isEnabled)
+        *isEnabled = isTabModeEnabled(mode);
+    if (isSelected)
+        *isSelected = (gActiveDeviceMode == mode);
+    return 1;
+}
+
 static void registerSingleTab(item_list_t *itemList, int mode, int visible)
 {
     opl_io_module_t *mod = &list_support[mode];
@@ -386,16 +422,13 @@ static void activateTabInternal(int mode, int forceProbe)
         if (mode == BDM_MODE)
             bdmEnsureDriverLoaded(BDM_TYPE_UDPBD);
         mod->support->itemInit(mod->support);
-    } else if (mode != HDD_MODE) {
+        ioPutRequest(IO_MENU_UPDATE_DEFFERED, &mod->support->mode);
+    } else if (!oplIsTabConnected(mode) && mode != HDD_MODE) {
         bdm_device_data_t *p = (bdm_device_data_t *)mod->support->priv;
         if (p)
             bdmResetDriverProbe(p->bdmDeviceType);
-    } else {
-        hddResetProbe();
+        ioPutRequest(IO_MENU_UPDATE_DEFFERED, &mod->support->mode);
     }
-
-    moduleUpdateMenuInternal(mod, 0, 0);
-    ioPutRequest(IO_MENU_UPDATE_DEFFERED, &mod->support->mode);
 }
 
 static void deferredSelectTab(void)
@@ -409,7 +442,13 @@ void oplOnTabSelected(int mode)
 {
     gActiveDeviceMode = mode;
     gPendingTabMode = mode;
-    ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredSelectTab);
+
+    if (mode >= 0 && mode < MODE_COUNT && list_support[mode].support && list_support[mode].support->enabled && oplIsTabConnected(mode)) {
+        gTabSwitchDelayFrames = 0;
+        ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredSelectTab);
+    } else {
+        gTabSwitchDelayFrames = 35;
+    }
 }
 
 static void itemExecSelect(struct menu_item *curMenu)
@@ -553,6 +592,7 @@ static void clearMenuGameList(opl_io_module_t *mdl)
 
 void initSupport(item_list_t *itemList, int mode, int force_reinit)
 {
+    (void)force_reinit;
     opl_io_module_t *mod = &list_support[mode];
     if (!mod->support) {
         mod->support = itemList;
@@ -826,7 +866,6 @@ static void updateMenuFromGameList(opl_io_module_t *mdl)
         int i;
 
         for (i = 0; i < count; ++i) {
-
             gup = guiOpCreate(GUI_OP_APPEND_MENU);
 
             gup->menu.menu = &mdl->menuItem;
@@ -867,7 +906,6 @@ void menuDeferredUpdate(void *data)
 
     if (mod->support->itemNeedsUpdate(mod->support)) {
         updateMenuFromGameList(mod);
-        moduleUpdateMenuInternal(mod, 0, 0);
 
         if (mod->support->mode != APP_MODE)
             shouldAppsUpdate = 1;
@@ -879,6 +917,13 @@ void menuDeferredUpdate(void *data)
 static void menuUpdateHook()
 {
     frameCounter++;
+
+    if (gTabSwitchDelayFrames > 0) {
+        gTabSwitchDelayFrames--;
+        if (gTabSwitchDelayFrames == 0 && gPendingTabMode >= 0 && gPendingTabMode == gActiveDeviceMode)
+            ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredSelectTab);
+        return;
+    }
 
     if (gActiveDeviceMode < 0 || gActiveDeviceMode >= MODE_COUNT)
         return;
@@ -1907,6 +1952,7 @@ static void setDefaults(void)
     gActiveDeviceMode = -1;
     gPendingTabMode = -1;
     gTabsRegistered = 0;
+    gTabSwitchDelayFrames = 0;
 
     gAutoLaunchGame = NULL;
     gAutoLaunchBDMGame = NULL;
@@ -2052,12 +2098,6 @@ static void deferredInit(void)
 {
     guiLoadCustomAssets();
     initAllSupport(0);
-
-    for (int i = 0; i < MODE_COUNT; i++) {
-        if (list_support[i].support == NULL)
-            continue;
-        moduleUpdateMenuInternal(&list_support[i], 0, 0);
-    }
 
     struct gui_update_t *id = guiOpCreate(GUI_INIT_DONE);
     guiDeferUpdate(id);
