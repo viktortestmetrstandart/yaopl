@@ -881,6 +881,7 @@ int diaExecuteDialog(struct UIItem *ui, int uiId, short inMenu, int (*updater)(i
         return -1;
 
     int haveFocus = 0, modified;
+    gDiaFocusedId = -1;
 
     diaStoreScrollSpeed();
 
@@ -941,6 +942,7 @@ int diaExecuteDialog(struct UIItem *ui, int uiId, short inMenu, int (*updater)(i
 
             // Cancel button breaks focus or exits with false result
             if (getKeyOn(gSelectButton == KEY_CIRCLE ? KEY_CROSS : KEY_CIRCLE)) {
+                gDiaFocusedId = -1;
                 diaRestoreScrollSpeed();
                 sfxPlay(SFX_CANCEL);
                 return UIID_BTN_CANCEL;
@@ -952,20 +954,25 @@ int diaExecuteDialog(struct UIItem *ui, int uiId, short inMenu, int (*updater)(i
                 sfxPlay(SFX_CONFIRM);
 
                 if (cur->type == UI_BUTTON) {
+                    gDiaFocusedId = -1;
                     diaRestoreScrollSpeed();
                     return cur->id;
                 }
 
                 if (cur->type == UI_OK) {
+                    gDiaFocusedId = -1;
                     diaRestoreScrollSpeed();
                     return UIID_BTN_OK;
                 }
             }
         }
 
+        gDiaFocusedId = haveFocus ? cur->id : -1;
+
         if (updater) {
             int updResult = updater(modified);
             if (updResult) {
+                gDiaFocusedId = -1;
                 diaRestoreScrollSpeed();
                 return updResult;
             }
