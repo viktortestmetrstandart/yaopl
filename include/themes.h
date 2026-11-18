@@ -145,10 +145,10 @@ char *thmGetFilePath(int themeID);
 #define GAMES_FRAME_Y      26
 #define GAMES_FRAME_W      324
 #define GAMES_FRAME_H      324
-#define GAMES_INNER_X      32
-#define GAMES_INNER_Y      40
-#define GAMES_INNER_W      304
-#define GAMES_INNER_H      302
+#define GAMES_INNER_X 32
+#define GAMES_INNER_Y 48
+#define GAMES_INNER_W 304
+#define GAMES_INNER_H 300
 
 int thmCalcWrappedItemLines(int font, const char *text, int maxWidth, char *outBuf, int outSize);
 
