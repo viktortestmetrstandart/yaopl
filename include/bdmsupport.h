@@ -51,6 +51,7 @@ int bdmFindPartition(char *target, const char *name, int write);
 int bdmFindSettingsDevice(char *target);
 int bdmIsReadOnlyPath(const char *path);
 void bdmLoadBasicModules(void);
+void bdmResetModuleState(void);
 void bdmLoadModules(void);
 int bdmEnsureDriverLoaded(int targetType);
 int bdmUDPBDLoaded(void);
