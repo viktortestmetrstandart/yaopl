@@ -223,10 +223,17 @@ void lngRemoveLanguages(const char *path)
 
 void lngInit(void)
 {
+    char mcData0[] = "mc0:/OPL/DATA";
+    char mcData1[] = "mc1:/OPL/DATA";
+    char mcBase0[] = "mc0:/OPL";
+    char mcBase1[] = "mc1:/OPL";
+
     fntInit();
 
-    lngAddLanguages(gBaseMCDir, "/", -1);
-    lngAddLanguages("mc?:OPL/DATA", "/", -1);
+    lngAddLanguages(mcData0, "/", -1);
+    lngAddLanguages(mcData1, "/", -1);
+    lngAddLanguages(mcBase0, "/", -1);
+    lngAddLanguages(mcBase1, "/", -1);
 }
 
 void lngEnd(void)
