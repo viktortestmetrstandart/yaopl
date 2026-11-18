@@ -2018,7 +2018,7 @@ static void setDefaults(void)
     gEnableBGM = 1;
     gSFXVolume = 80;
     gBootSndVolume = 80;
-    gBGMVolume = 75;
+    gBGMVolume = 90;
     gDefaultBGMPath[0] = '\0';
     gXSensitivity = 1;
     gYSensitivity = 1;
