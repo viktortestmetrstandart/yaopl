@@ -619,6 +619,20 @@ static void menuPrevH()
     }
 }
 
+static int menuItemHeightPx(submenu_list_t *node)
+{
+    char buf[256];
+    int font = (gTheme && gTheme->itemsList) ? gTheme->itemsList->font : gTheme->fonts[0];
+    int maxW = GAMES_INNER_W;
+    if (gTheme && gTheme->itemsList && gTheme->itemsList->extended) {
+        items_list_t *il = (items_list_t *)gTheme->itemsList->extended;
+        if (il->decoratorImage)
+            maxW -= 20;
+    }
+    int lines = thmCalcWrappedItemLines(font, submenuItemGetText(&node->item), maxW, buf, sizeof(buf));
+    return lines * MENU_ITEM_HEIGHT;
+}
+
 static void menuFirstPage()
 {
     submenu_list_t *cur = selected_item->item->current;
@@ -644,9 +658,14 @@ static void menuLastPage()
 
         selected_item->item->current = cur;
 
-        int itms = ((items_list_t *)gTheme->itemsList->extended)->displayedItems;
-        while (--itms && cur->prev)
+        int usedH = menuItemHeightPx(cur);
+        while (cur->prev) {
+            int prevH = menuItemHeightPx(cur->prev);
+            if (usedH + prevH > GAMES_INNER_H)
+                break;
             cur = cur->prev;
+            usedH += prevH;
+        }
 
         selected_item->item->pagestart = cur;
     }
@@ -660,15 +679,29 @@ static void menuNextV()
         selected_item->item->current = cur->next;
         sfxPlay(SFX_CURSOR);
 
-        cur = selected_item->item->pagestart;
-        int itms = ((items_list_t *)gTheme->itemsList->extended)->displayedItems + 1;
-        while (--itms && cur)
-            if (selected_item->item->current == cur)
-                return;
-            else
-                cur = cur->next;
-
-        selected_item->item->pagestart = selected_item->item->current;
+        submenu_list_t *ps = selected_item->item->pagestart;
+        while (ps && ps != selected_item->item->current) {
+            int usedH = 0;
+            submenu_list_t *scan = ps;
+            int fits = 0;
+            while (scan) {
+                usedH += menuItemHeightPx(scan);
+                if (usedH > GAMES_INNER_H)
+                    break;
+                if (scan == selected_item->item->current) {
+                    fits = 1;
+                    break;
+                }
+                scan = scan->next;
+            }
+            if (fits)
+                break;
+            ps = ps->next;
+        }
+        if (ps)
+            selected_item->item->pagestart = ps;
+        else
+            selected_item->item->pagestart = selected_item->item->current;
     } else {
         menuFirstPage();
     }
@@ -683,9 +716,16 @@ static void menuPrevV()
         sfxPlay(SFX_CURSOR);
 
         if (selected_item->item->pagestart == cur) {
-            int itms = ((items_list_t *)gTheme->itemsList->extended)->displayedItems + 1;
-            while (--itms && selected_item->item->pagestart->prev)
-                selected_item->item->pagestart = selected_item->item->pagestart->prev;
+            submenu_list_t *ps = selected_item->item->current;
+            int usedH = menuItemHeightPx(ps);
+            while (ps->prev) {
+                int prevH = menuItemHeightPx(ps->prev);
+                if (usedH + prevH > GAMES_INNER_H)
+                    break;
+                ps = ps->prev;
+                usedH += prevH;
+            }
+            selected_item->item->pagestart = ps;
         }
     } else {
         menuLastPage();
@@ -697,14 +737,17 @@ static void menuNextPage()
     submenu_list_t *cur = selected_item->item->pagestart;
 
     if (cur && cur->next) {
-        int itms = ((items_list_t *)gTheme->itemsList->extended)->displayedItems + 1;
         sfxPlay(SFX_CURSOR);
-
-        while (--itms && cur->next)
+        int usedH = 0;
+        while (cur->next) {
+            int h = menuItemHeightPx(cur);
+            if (usedH > 0 && usedH + h > GAMES_INNER_H)
+                break;
+            usedH += h;
             cur = cur->next;
-
+        }
         selected_item->item->current = cur;
-        selected_item->item->pagestart = selected_item->item->current;
+        selected_item->item->pagestart = cur;
     } else {
         menuFirstPage();
     }
@@ -715,14 +758,17 @@ static void menuPrevPage()
     submenu_list_t *cur = selected_item->item->pagestart;
 
     if (cur && cur->prev) {
-        int itms = ((items_list_t *)gTheme->itemsList->extended)->displayedItems + 1;
         sfxPlay(SFX_CURSOR);
-
-        while (--itms && cur->prev)
+        int usedH = 0;
+        while (cur->prev) {
+            int h = menuItemHeightPx(cur->prev);
+            if (usedH > 0 && usedH + h > GAMES_INNER_H)
+                break;
+            usedH += h;
             cur = cur->prev;
-
+        }
         selected_item->item->current = cur;
-        selected_item->item->pagestart = selected_item->item->current;
+        selected_item->item->pagestart = cur;
     } else {
         menuLastPage();
     }
