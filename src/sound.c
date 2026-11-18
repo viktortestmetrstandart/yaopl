@@ -223,8 +223,8 @@ void sfxPlay(int id)
 
 extern void *_gp;
 
-static int bgmThreadID, bgmIoThreadID;
-static int outSema, inSema;
+static int bgmThreadID = -1, bgmIoThreadID = -1;
+static int outSema = -1, inSema = -1;
 static s32 bgmStateSema = -1;
 static unsigned char terminateFlag, bgmIsPlaying;
 static volatile unsigned char bgmLaunchBlocked = 0;
@@ -235,8 +235,9 @@ static volatile unsigned char bgmThreadRunning, bgmIoThreadRunning;
 static u8 bgmThreadStack[BGM_THREAD_STACK_SIZE] __attribute__((aligned(16)));
 static u8 bgmIoThreadStack[BGM_THREAD_STACK_SIZE] __attribute__((aligned(16)));
 
-static OggVorbis_File *vorbisFile;
+static OggVorbis_File *vorbisFile = NULL;
 static unsigned char *bgmFileBuffer = NULL;
+static unsigned int bgmFileSize = 0;
 
 typedef struct
 {
@@ -304,13 +305,16 @@ static long bgmMemTell(void *datasource)
 
 static void bgmThread(void *arg)
 {
+    (void)arg;
     bgmThreadRunning = 1;
 
     while (!terminateFlag) {
         SleepThread();
 
-        while (PollSema(outSema) == outSema) {
+        while (!terminateFlag && PollSema(outSema) == outSema) {
             audsrv_wait_audio(BGM_RING_BUFFER_SIZE);
+            if (terminateFlag)
+                break;
             audsrv_play_audio(bgmBuffer[rdPtr], BGM_RING_BUFFER_SIZE);
             rdPtr = (rdPtr + 1) % BGM_RING_BUFFER_COUNT;
 
@@ -330,10 +334,14 @@ static void bgmThread(void *arg)
 static void bgmIoThread(void *arg)
 {
     int partsToRead, decodedParts, decodeTotal, bitStream, i;
+    (void)arg;
 
     bgmIoThreadRunning = 1;
     do {
         WaitSema(inSema);
+        if (terminateFlag || !gEnableBGM)
+            break;
+
         partsToRead = 1;
 
         while ((partsToRead < BGM_RING_BUFFER_COUNT) && (PollSema(inSema) == inSema))
@@ -383,6 +391,28 @@ static int bgmLoad(void)
     const char *candidates[5];
     int count = 0;
     int i, fd, size, bytesRead;
+
+    if (bgmFileBuffer != NULL && bgmFileSize > 0) {
+        vorbisFile = malloc(sizeof(OggVorbis_File));
+        if (vorbisFile == NULL)
+            return -ENOMEM;
+        memset(vorbisFile, 0, sizeof(OggVorbis_File));
+
+        bgmMem.data = bgmFileBuffer;
+        bgmMem.size = bgmFileSize;
+        bgmMem.pos = 0;
+
+        ov_callbacks memCallbacks = {&bgmMemRead, &bgmMemSeek, &bgmMemClose, &bgmMemTell};
+        if (ov_open_callbacks(&bgmMem, vorbisFile, NULL, 0, memCallbacks) < 0) {
+            free(vorbisFile);
+            vorbisFile = NULL;
+            free(bgmFileBuffer);
+            bgmFileBuffer = NULL;
+            bgmFileSize = 0;
+        } else {
+            return 0;
+        }
+    }
 
     if (gDefaultBGMPath[0] != '\0')
         candidates[count++] = gDefaultBGMPath;
@@ -443,12 +473,38 @@ static int bgmLoad(void)
             continue;
         }
 
+        bgmFileSize = (unsigned int)size;
         LOG("BGM: Loaded %s (%d bytes) into RAM.\n", candidates[i], size);
         return 0;
     }
 
     LOG("BGM: No external bgm.ogg found.\n");
     return -ENOENT;
+}
+
+static void bgmShutdownDelayCallback(s32 alarm_id, u16 time, void *common)
+{
+    (void)alarm_id;
+    (void)time;
+    iWakeupThread((int)common);
+}
+
+static void bgmDeleteThreadSafe(int tid)
+{
+    int retries;
+
+    if (tid < 0)
+        return;
+
+    for (retries = 0; retries < 50; retries++) {
+        if (DeleteThread(tid) >= 0)
+            return;
+        SetAlarm(200 * 16, &bgmShutdownDelayCallback, (void *)GetThreadId());
+        SleepThread();
+    }
+
+    TerminateThread(tid);
+    DeleteThread(tid);
 }
 
 static int bgmInit(void)
@@ -479,6 +535,7 @@ static int bgmInit(void)
 
         if (outSema < 0) {
             DeleteSema(inSema);
+            inSema = -1;
             return outSema;
         }
     } else
@@ -509,13 +566,18 @@ static int bgmInit(void)
         } else {
             DeleteSema(inSema);
             DeleteSema(outSema);
+            inSema = -1;
+            outSema = -1;
             DeleteThread(bgmThreadID);
+            bgmThreadID = -1;
             result = bgmIoThreadID;
         }
     } else {
         result = bgmThreadID;
         DeleteSema(inSema);
         DeleteSema(outSema);
+        inSema = -1;
+        outSema = -1;
     }
 
     return result;
@@ -523,26 +585,25 @@ static int bgmInit(void)
 
 static void bgmDeinit(void)
 {
-    DeleteSema(inSema);
-    DeleteSema(outSema);
-    DeleteThread(bgmThreadID);
-    DeleteThread(bgmIoThreadID);
+    bgmDeleteThreadSafe(bgmThreadID);
+    bgmDeleteThreadSafe(bgmIoThreadID);
+    bgmThreadID = -1;
+    bgmIoThreadID = -1;
+
+    if (inSema >= 0) {
+        DeleteSema(inSema);
+        inSema = -1;
+    }
+    if (outSema >= 0) {
+        DeleteSema(outSema);
+        outSema = -1;
+    }
 
     if (vorbisFile != NULL) {
         ov_clear(vorbisFile);
         free(vorbisFile);
         vorbisFile = NULL;
     }
-
-    if (bgmFileBuffer != NULL) {
-        free(bgmFileBuffer);
-        bgmFileBuffer = NULL;
-    }
-}
-
-static void bgmShutdownDelayCallback(s32 alarm_id, u16 time, void *common)
-{
-    iWakeupThread((int)common);
 }
 
 void bgmSetBlocked(int blocked)
@@ -586,6 +647,8 @@ void bgmStart(void)
         audsrv_set_volume(gBGMVolume);
 
         bgmIsPlaying = 1;
+        bgmIoThreadRunning = 1;
+        bgmThreadRunning = 1;
 
         StartThread(bgmIoThreadID, NULL);
         StartThread(bgmThreadID, NULL);
@@ -629,7 +692,10 @@ void bgmStop(void)
     LOG("BGM: terminating threads...\n");
 
     terminateFlag = 1;
-    WakeupThread(bgmThreadID);
+    if (inSema >= 0)
+        SignalSema(inSema);
+    if (bgmThreadID >= 0)
+        WakeupThread(bgmThreadID);
 
     threadId = GetThreadId();
     while (bgmIoThreadRunning) {
@@ -700,6 +766,12 @@ void audioEnd(void)
     bgmSetBlocked(1);
     if (isBgmPlaying())
         bgmStop();
+
+    if (bgmFileBuffer != NULL) {
+        free(bgmFileBuffer);
+        bgmFileBuffer = NULL;
+        bgmFileSize = 0;
+    }
 
     audsrv_quit();
     audio_initialized = 0;
