@@ -1370,6 +1370,8 @@ static void _saveConfig()
         configSetInt(configOPL, CONFIG_OPL_SCROLLING, gScrollSpeed);
         if (lngGetGuiValue() != 0)
             configSetStr(configOPL, CONFIG_OPL_LANGUAGE, lngGetValue());
+        else
+            configRemoveKey(configOPL, CONFIG_OPL_LANGUAGE);
         configSetColor(configOPL, CONFIG_OPL_BGCOLOR, gDefaultBgColor);
         configSetColor(configOPL, CONFIG_OPL_TEXTCOLOR, gDefaultTextColor);
         configSetColor(configOPL, CONFIG_OPL_UI_TEXTCOLOR, gDefaultUITextColor);
