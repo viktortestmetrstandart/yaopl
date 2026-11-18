@@ -286,6 +286,7 @@ int lngSetGuiValue(int langID)
             fntLoadDefault(NULL);
             thmSetGuiValue(thmGetGuiValue(), 1);
             bgmUnMute();
+            return 1;
         } else
             guiLangID = langID;
     }
