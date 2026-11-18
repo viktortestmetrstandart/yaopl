@@ -31,6 +31,12 @@
 
 static int screenWidth;
 static int screenHeight;
+static int gDiaFocusedId = -1;
+
+int diaGetFocusedId(void)
+{
+    return gDiaFocusedId;
+}
 
 // Utility stuff
 #define KEYB_MODE   2
