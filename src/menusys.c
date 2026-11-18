@@ -788,6 +788,22 @@ void menuSetSelectedItem(menu_item_t *item)
     }
 }
 
+static void menuRenderCenteredItem(int y, char *txt, int isSelected)
+{
+    u64 col = isSelected ? gTheme->selTextColor : gTheme->textColor;
+
+    fntRenderString(gTheme->fonts[0], 320, y, ALIGN_CENTER, 0, 0, txt, col);
+    if (isSelected) {
+        int w = rmUnScaleX(fntCalcDimensions(gTheme->fonts[0], txt));
+        if (w > 0) {
+            int x1 = 320 - (w >> 1);
+            int x2 = x1 + w;
+            rmDrawLine(x1, y - 10, x2, y - 10, col);
+            rmDrawLine(x1, y + 9, x2, y + 9, col);
+        }
+    }
+}
+
 void menuRenderMenu()
 {
     guiDrawBGPlasma();
@@ -811,7 +827,7 @@ void menuRenderMenu()
     int y = (gTheme->usedHeight >> 1) - (spacing * (count >> 1));
     int cp = 0;
     for (it = mainMenu; it; it = it->next, cp++) {
-        fntRenderString(gTheme->fonts[0], 320, y, ALIGN_CENTER, 0, 0, submenuItemGetText(&it->item), (cp == sitem) ? gTheme->selTextColor : gTheme->textColor);
+        menuRenderCenteredItem(y, submenuItemGetText(&it->item), cp == sitem);
         y += spacing;
         if (it->next && it->next->item.id == MENU_ABOUT)
             y += spacing / 2;
