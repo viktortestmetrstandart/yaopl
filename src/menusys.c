@@ -1157,7 +1157,7 @@ void menuRenderGameMenu()
     int y = (gTheme->usedHeight >> 1) - (spacing * (count >> 1));
     int cp = 0;
 
-    fntRenderString(gTheme->fonts[0], 320, 20, ALIGN_CENTER, 0, 0, selected_item->item->current->item.text, gTheme->selTextColor);
+    menuRenderCenteredItem(y, submenuItemGetText(&it->item), cp == sitem);
 
     char *cfgSource = gameConfigSource();
     fntRenderString(gTheme->fonts[0], 320, 40, ALIGN_CENTER, 0, 0, cfgSource, gTheme->textColor);
