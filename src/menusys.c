@@ -1047,7 +1047,7 @@ void menuHandleInputMain()
 {
     if (getKeyOn(KEY_LEFT)) {
         menuPrevH();
-    } else if (getKey(KEY_RIGHT)) {
+    } else if (getKeyOn(KEY_RIGHT)) {
         menuNextH();
     } else if (getKey(KEY_UP)) {
         menuPrevV();
