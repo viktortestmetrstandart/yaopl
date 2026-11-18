@@ -250,6 +250,8 @@ void sysReset(int modload_mask)
     LOG("[POWEROFF]:\n");
     sysLoadModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL);
 
+    bdmResetModuleState();
+    
     if (modload_mask & SYS_LOAD_USB_MODULES) {
         bdmLoadBasicModules();
     }
