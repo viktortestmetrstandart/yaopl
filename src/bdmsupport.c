@@ -341,6 +341,12 @@ static int bdmNeedsUpdate(item_list_t *itemList)
     // Lazy load ONLY this device's IRX driver when its tab becomes active
     bdmEnsureDriverLoaded(targetType);
 
+    if (targetType == BDM_TYPE_SDC && !mx4sioModLoaded) {
+        pDeviceData->ForceRefresh = 0;
+        pDeviceData->bdmProbing = 0;
+        return 0;
+    }
+
     if (pDeviceData->ForceRefresh) {
         pDeviceData->ForceRefresh = 0;
         pDeviceData->bdmProbing = 1;
