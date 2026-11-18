@@ -41,11 +41,15 @@ static int screenHeight;
 static void diaDrawBoundingBox(int x, int y, int w, int h, int focus)
 {
     u64 color = focus ? gTheme->selTextColor : gTheme->textColor;
+    int bx = x - 5;
+    int by = y;
+    int bw = w + 10;
+    int bh = h + 10;
 
-    color |= GS_SETREG_RGBA(0, 0, 0, 0xFF);
-    color &= gColFocus;
-
-    rmDrawRect(x - 5, y, w + 10, h + 10, color);
+    rmDrawLine(bx, by, bx + bw, by, color);
+    rmDrawLine(bx, by + bh, bx + bw, by + bh, color);
+    rmDrawLine(bx, by, bx, by + bh, color);
+    rmDrawLine(bx + bw, by, bx + bw, by + bh, color);
 }
 
 int diaShowKeyb(char *text, int maxLen, int hide_text, const char *title)
@@ -264,7 +268,6 @@ int diaShowKeyb(char *text, int maxLen, int hide_text, const char *title)
         }
     }
 
-
     if (mask_buffer != NULL)
         free(mask_buffer);
 
@@ -377,8 +380,6 @@ static int diaShowColSel(unsigned char *r, unsigned char *g, unsigned char *b)
     return ret;
 }
 
-
-
 // ----------------------------------------------------------------------------
 // --------------------------- Dialogue handling ------------------------------
 // ----------------------------------------------------------------------------
@@ -408,19 +409,6 @@ static int diaShouldBreakLineAfter(struct UIItem *ui)
     return (ui->type == UI_SPLITTER);
 }
 
-static void diaDrawHint(int text_id)
-{
-    int x, y;
-    char *text = _l(text_id);
-
-    x = screenWidth - rmUnScaleX(fntCalcDimensions(gTheme->fonts[0], text)) - 10;
-    y = gTheme->usedHeight - 62;
-
-    // render hint on the lower side of the screen.
-    rmDrawRect(x, y, screenWidth - x, MENU_ITEM_HEIGHT + 10, gColDarker);
-    fntRenderString(gTheme->fonts[0], x + 5, y + 5, ALIGN_NONE, 0, 0, text, gTheme->textColor);
-}
-
 /// renders an ui item (either selected or not)
 /// sets width and height of the render into the parameters
 static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int haveFocus, int *w, int *h)
@@ -431,22 +419,22 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
 
     *h = UI_SPACING_H;
 
-    // all texts are rendered up from the given point!
+    // Selected controllable item text becomes bright white; when editing (haveFocus) -> cyan-blue with underline
     u64 txtcol;
 
-    if (diaIsControllable(item))
+    if (selected)
+        txtcol = haveFocus ? gTheme->selTextColor : gTheme->textColor;
+    else if (diaIsControllable(item))
         txtcol = gTheme->uiTextColor;
     else
         txtcol = gTheme->textColor;
 
-    // let's see what do we have here?
     switch (item->type) {
         case UI_TERMINATOR:
             return;
 
         case UI_BUTTON:
         case UI_LABEL: {
-            // width is text length in pixels...
             const char *txt = diaGetLocalisedText(item->label.text, item->label.stringId);
             if (txt && strlen(txt))
                 *w = fntRenderString(gTheme->fonts[0], x, y, ALIGN_NONE, 0, 0, txt, txtcol) - x;
@@ -457,11 +445,9 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
         }
 
         case UI_SPLITTER: {
-            // a line. Thanks to the font rendering, we need to shift up by one font line
-            *w = 0;                          // nothing to render at all
-            int ypos = y - UI_SPACING_V / 2; //  gsFont->CharHeight +
+            *w = 0;
+            int ypos = y - UI_SPACING_V / 2;
 
-            // to ODD lines
             ypos &= ~1;
 
             rmDrawLine(x, ypos, x + UI_BREAK_LEN, ypos, gColWhite);
@@ -469,11 +455,10 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
         }
 
         case UI_BREAK:
-            *w = 0; // nothing to render at all
+            *w = 0;
             break;
 
         case UI_SPACER: {
-            // next column divisible by spacer
             *w = (UI_SPACER_WIDTH - x % UI_SPACER_WIDTH);
 
             if (*w < UI_SPACER_MINIMAL) {
@@ -544,7 +529,6 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
             *w = rmWideScale(25);
             *h = 17;
 
-            // Align to the right
             x -= *w;
 
             rmDrawRect(x, y + 3, *w, *h, txtcol);
@@ -555,8 +539,17 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
         }
     }
 
-    if (selected)
-        diaDrawBoundingBox(x, y, *w, *h, haveFocus);
+    if (selected) {
+        if (item->type == UI_COLOUR) {
+            u64 bcol = haveFocus ? gTheme->selTextColor : gTheme->textColor;
+            rmDrawLine(x - 2, y + 1, x + *w + 2, y + 1, bcol);
+            rmDrawLine(x - 2, y + *h + 4, x + *w + 2, y + *h + 4, bcol);
+            rmDrawLine(x - 2, y + 1, x - 2, y + *h + 4, bcol);
+            rmDrawLine(x + *w + 2, y + 1, x + *w + 2, y + *h + 4, bcol);
+        } else if (haveFocus && *w > 0) {
+            rmDrawLine(x, y + 18, x + *w, y + 18, gTheme->selTextColor);
+        }
+    }
 
     if (item->fixedWidth != 0) {
         int newSize;
@@ -622,10 +615,6 @@ void diaRenderUI(struct UIItem *ui, short inMenu, struct UIItem *cur, int haveFo
         rc++;
     }
 
-    if ((cur != NULL) && (!haveFocus) && (cur->hintId != -1)) {
-        diaDrawHint(cur->hintId);
-    }
-
     int uiHints[2] = {_STR_SELECT, _STR_BACK};
     int uiIcons[2] = {CIRCLE_ICON, CROSS_ICON};
     int uiY = gTheme->usedHeight - 32;
@@ -686,7 +675,7 @@ static int diaHandleInput(struct UIItem *item, int *modified)
             if (item->intvalue.current < item->intvalue.max) {
                 item->intvalue.current++;
             } else {
-                item->intvalue.current = item->intvalue.min; // was "= 0;"
+                item->intvalue.current = item->intvalue.min;
             }
         } else if (getKey(KEY_DOWN)) {
             sfxPlay(SFX_CURSOR);
@@ -726,9 +715,7 @@ static int diaHandleInput(struct UIItem *item, int *modified)
         } else if (getKey(KEY_DOWN) && (item->intvalue.enumvalues[item->intvalue.current + 1] != NULL)) {
             item->intvalue.current++;
             sfxPlay(SFX_CURSOR);
-        }
-
-        else {
+        } else {
             *modified = 0;
         }
 
@@ -893,8 +880,6 @@ int diaExecuteDialog(struct UIItem *ui, int uiId, short inMenu, int (*updater)(i
     setButtonDelay(KEY_UP, DIA_SCROLL_SPEED);
     setButtonDelay(KEY_DOWN, DIA_SCROLL_SPEED);
 
-    // okay, we have the first selectable item
-    // we can proceed with rendering etc. etc.
     while (1) {
         guiLock(); // as in diaShowKeyb()
         rmStartFrame();
