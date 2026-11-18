@@ -807,7 +807,7 @@ static void drawMenuIcon(struct menu_list *menu, struct submenu_list *item, conf
     (void)item;
     (void)config;
 
-    int step = rmWideScale(58);
+    int step = rmWideScale(135);
     int startX = elem->posX - ((step * 3) >> 1);
 
     for (int slot = 0; slot < 4; slot++) {
@@ -820,34 +820,31 @@ static void drawMenuIcon(struct menu_list *menu, struct submenu_list *item, conf
             continue;
 
         int x = startX + slot * step;
-        int w = tex->Width;
-        int h = tex->Height;
-        if (w > 42 || h > 42) {
-            if (w >= h) {
-                h = (h * 42) / w;
-                w = 42;
-            } else {
-                w = (w * 42) / h;
-                h = 42;
+        int w = DIM_UNDEF;
+        int h = DIM_UNDEF;
+
+        if (tex->Width > 125 || tex->Height > 68) {
+            w = tex->Width;
+            h = tex->Height;
+            if (w > 125) {
+                h = (h * 125) / w;
+                w = 125;
+            }
+            if (h > 68) {
+                w = (w * 68) / h;
+                h = 68;
             }
         }
 
         u64 col;
         if (isSelected)
-            col = GS_SETREG_RGBA(0x80, 0x80, 0x80, 0x80);
+            col = gDefaultCol;
         else if (isEnabled)
-            col = GS_SETREG_RGBA(0x42, 0x42, 0x42, 0x80);
+            col = GS_SETREG_RGBA(0x46, 0x46, 0x46, 0x80);
         else
-            col = GS_SETREG_RGBA(0x20, 0x20, 0x20, 0x38);
+            col = GS_SETREG_RGBA(0x28, 0x28, 0x28, 0x44);
 
-        rmDrawPixmap(tex, x, elem->posY, ALIGN_CENTER, w, h, SCALING_RATIO, col);
-
-        if (isSelected) {
-            int barW = rmWideScale(30);
-            int barY = elem->posY + (h >> 1) + 4;
-            u64 glowCol = GS_SETREG_RGBA(0x00, 0xAE, 0xFF, 0x80);
-            rmDrawRect(x - (barW >> 1), barY, barW, 2, glowCol);
-        }
+        rmDrawPixmap(tex, x, elem->posY, elem->aligned, w, h, elem->scaled, col);
     }
 }
 
@@ -894,7 +891,6 @@ static void drawMenuText(struct menu_list *menu, struct submenu_list *item, conf
 
 static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
-    // All 4 device slots are shown directly by drawMenuIcon()
     (void)menu;
     (void)item;
     (void)config;
@@ -930,50 +926,65 @@ int thmCalcWrappedItemLines(int font, const char *text, int maxWidth, char *outB
     return lines;
 }
 
-static void drawGamesGreenFrame(int font, char *headerText)
+static void drawTopHeaderBadge(int font, char *headerText)
 {
-    const int fx = GAMES_FRAME_X;
-    const int fy = GAMES_FRAME_Y;
-    const int fw = GAMES_FRAME_W;
-    const int fh = GAMES_FRAME_H;
+    const int cx = screenWidth >> 1;
+    const int midY = 22;
+    const int bh = 22;
+    const int by = midY - (bh >> 1);
+    const int r = 5;
+    static const int inset[5] = {4, 2, 1, 1, 0};
 
-    u64 bgFill = GS_SETREG_RGBA(0x07, 0x16, 0x0B, 0x44);
-    u64 outerGreen = GS_SETREG_RGBA(0x1E, 0x7A, 0x30, 0x80);
-    u64 innerGreen = GS_SETREG_RGBA(0x40, 0xC8, 0x55, 0x80);
+    int textW = fntCalcDimensions(font, headerText);
+    int padX = rmWideScale(18);
+    int bw = textW + (padX << 1);
+    if (bw < rmWideScale(120))
+        bw = rmWideScale(120);
+    if (bw > screenWidth - 80)
+        bw = screenWidth - 80;
+
+    int bx = cx - (bw >> 1);
+
+    u64 bgCol = GS_SETREG_RGBA(0x14, 0x16, 0x1A, 0x58);
+    u64 grayLine = GS_SETREG_RGBA(0x78, 0x7C, 0x82, 0x80);
     u64 lightGreen = GS_SETREG_RGBA(0x90, 0xFF, 0x9E, 0x80);
-    u64 badgeBg = GS_SETREG_RGBA(0x0C, 0x24, 0x12, 0x7A);
 
-    // Translucent dark-green backdrop inside frame
-    rmDrawRect(fx, fy, fw, fh, bgFill);
+    // Side horizontal lines extending left and right from the rounded frame
+    rmDrawLine(24, midY, bx, midY, grayLine);
+    rmDrawLine(bx + bw, midY, screenWidth - 24, midY, grayLine);
 
-    // Double border (outer dark green + inner bright green)
-    rmDrawLine(fx, fy, fx + fw, fy, outerGreen);
-    rmDrawLine(fx, fy + fh, fx + fw, fy + fh, outerGreen);
-    rmDrawLine(fx, fy, fx, fy + fh, outerGreen);
-    rmDrawLine(fx + fw, fy, fx + fw, fy + fh, outerGreen);
+    // Rounded background fill
+    for (int dy = 0; dy < r; dy++) {
+        int dx = inset[dy];
+        rmDrawRect(bx + dx, by + dy, bw - (dx << 1), 1, bgCol);
+        rmDrawRect(bx + dx, by + bh - 1 - dy, bw - (dx << 1), 1, bgCol);
+    }
+    rmDrawRect(bx, by + r, bw, bh - (r << 1), bgCol);
 
-    rmDrawLine(fx + 1, fy + 1, fx + fw - 1, fy + 1, innerGreen);
-    rmDrawLine(fx + 1, fy + fh - 1, fx + fw - 1, fy + fh - 1, innerGreen);
-    rmDrawLine(fx + 1, fy + 1, fx + 1, fy + fh - 1, innerGreen);
-    rmDrawLine(fx + fw - 1, fy + 1, fx + fw - 1, fy + fh - 1, innerGreen);
+    // Rounded border
+    rmDrawLine(bx + 4, by, bx + bw - 4, by, grayLine);
+    rmDrawLine(bx + 4, by + bh, bx + bw - 4, by + bh, grayLine);
+    rmDrawLine(bx, by + 4, bx, by + bh - 4, grayLine);
+    rmDrawLine(bx + bw, by + 4, bx + bw, by + bh - 4, grayLine);
 
-    // Centered top header badge with green outline and light-green text
-    int cx = fx + (fw >> 1);
-    int textW = rmUnScaleX(fntCalcDimensions(font, headerText));
-    int badgeW = textW + 20;
-    if (badgeW > fw - 24)
-        badgeW = fw - 24;
-    int badgeH = 20;
-    int bx = cx - (badgeW >> 1);
-    int by = fy - (badgeH >> 1);
+    // Rounded corners
+    rmDrawLine(bx + 4, by, bx + 2, by + 1, grayLine);
+    rmDrawLine(bx + 2, by + 1, bx + 1, by + 2, grayLine);
+    rmDrawLine(bx + 1, by + 2, bx, by + 4, grayLine);
 
-    rmDrawRect(bx, by, badgeW, badgeH, badgeBg);
-    rmDrawLine(bx, by, bx + badgeW, by, innerGreen);
-    rmDrawLine(bx, by + badgeH, bx + badgeW, by + badgeH, innerGreen);
-    rmDrawLine(bx, by, bx, by + badgeH, innerGreen);
-    rmDrawLine(bx + badgeW, by, bx + badgeW, by + badgeH, innerGreen);
+    rmDrawLine(bx + bw - 4, by, bx + bw - 2, by + 1, grayLine);
+    rmDrawLine(bx + bw - 2, by + 1, bx + bw - 1, by + 2, grayLine);
+    rmDrawLine(bx + bw - 1, by + 2, bx + bw, by + 4, grayLine);
 
-    fntRenderString(font, cx, fy, ALIGN_CENTER, 0, 0, headerText, lightGreen);
+    rmDrawLine(bx + 4, by + bh, bx + 2, by + bh - 1, grayLine);
+    rmDrawLine(bx + 2, by + bh - 1, bx + 1, by + bh - 2, grayLine);
+    rmDrawLine(bx + 1, by + bh - 2, bx, by + bh - 4, grayLine);
+
+    rmDrawLine(bx + bw - 4, by + bh, bx + bw - 2, by + bh - 1, grayLine);
+    rmDrawLine(bx + bw - 2, by + bh - 1, bx + bw - 1, by + bh - 2, grayLine);
+    rmDrawLine(bx + bw - 1, by + bh - 2, bx + bw, by + bh - 4, grayLine);
+
+    fntRenderString(font, cx, midY, ALIGN_CENTER, 0, 0, headerText, lightGreen);
 }
 
 static const char *getEmptyListMessage(struct menu_list *menu)
@@ -1008,13 +1019,13 @@ static const char *getEmptyListMessage(struct menu_list *menu)
 
 static void drawItemsList(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
-    int isGamesFrame = (elem == gTheme->gamesItemsList);
-    int boxX = isGamesFrame ? GAMES_INNER_X : elem->posX;
-    int boxY = isGamesFrame ? GAMES_INNER_Y : elem->posY;
-    int boxW = isGamesFrame ? GAMES_INNER_W : elem->width;
-    int boxH = isGamesFrame ? GAMES_INNER_H : elem->height;
+    int isGamesList = (elem == gTheme->gamesItemsList);
+    int boxX = isGamesList ? GAMES_INNER_X : elem->posX;
+    int boxY = isGamesList ? GAMES_INNER_Y : elem->posY;
+    int boxW = isGamesList ? GAMES_INNER_W : elem->width;
+    int boxH = isGamesList ? GAMES_INNER_H : elem->height;
 
-    if (isGamesFrame) {
+    if (isGamesList) {
         item_list_t *support = (item_list_t *)menu->item->userdata;
         const char *tag = support ? oplGetActiveSourceTag(support->mode) : "";
         char hdr[64];
@@ -1022,14 +1033,14 @@ static void drawItemsList(struct menu_list *menu, struct submenu_list *item, con
             snprintf(hdr, sizeof(hdr), "%s (%s)", _l(_STR_GAMES_HEADER), tag);
         else
             snprintf(hdr, sizeof(hdr), "%s", _l(_STR_GAMES_HEADER));
-        drawGamesGreenFrame(elem->font, hdr);
+        drawTopHeaderBadge(elem->font, hdr);
     }
 
     if (item) {
         items_list_t *itemsList = (items_list_t *)elem->extended;
         int posX = boxX;
         int posY = boxY;
-        if (!isGamesFrame && elem->aligned) {
+        if (!isGamesList && elem->aligned) {
             posX -= boxW >> 1;
             posY -= boxH >> 1;
         }
@@ -1076,7 +1087,7 @@ static void drawItemsList(struct menu_list *menu, struct submenu_list *item, con
             ps = ps->next;
         }
 
-        if (isGamesFrame) {
+        if (isGamesList) {
             int totalCount = 0, pageStartIdx = 0;
             submenu_list_t *scan = menu->item->submenu;
             while (scan) {
@@ -1086,17 +1097,17 @@ static void drawItemsList(struct menu_list *menu, struct submenu_list *item, con
                 scan = scan->next;
             }
             if (totalCount > visibleCount && visibleCount > 0) {
-                int sbX = GAMES_FRAME_X + GAMES_FRAME_W - 7;
-                int sbY = GAMES_INNER_Y;
-                int sbH = GAMES_INNER_H;
+                int sbX = boxX + boxW + 6;
+                int sbY = boxY;
+                int sbH = boxH;
                 int thumbH = (sbH * visibleCount) / totalCount;
                 if (thumbH < 18)
                     thumbH = 18;
                 int maxScroll = totalCount - visibleCount;
                 int thumbY = sbY + ((sbH - thumbH) * pageStartIdx) / (maxScroll > 0 ? maxScroll : 1);
 
-                rmDrawRect(sbX, sbY, 3, sbH, GS_SETREG_RGBA(0x14, 0x42, 0x1E, 0x60));
-                rmDrawRect(sbX, thumbY, 3, thumbH, GS_SETREG_RGBA(0x90, 0xFF, 0x9E, 0x80));
+                rmDrawRect(sbX, sbY, 3, sbH, GS_SETREG_RGBA(0x38, 0x3C, 0x40, 0x40));
+                rmDrawRect(sbX, thumbY, 3, thumbH, GS_SETREG_RGBA(0x88, 0x8C, 0x92, 0x70));
             }
         }
     } else {
