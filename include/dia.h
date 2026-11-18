@@ -82,6 +82,7 @@ struct UIItem
 
 /// Dialog display
 int diaExecuteDialog(struct UIItem *ui, int uiId, short inMenu, int (*updater)(int modified));
+int diaGetFocusedId(void);
 void diaRenderUI(struct UIItem *ui, short inMenu, struct UIItem *cur, int haveFocus);
 int diaShowKeyb(char *text, int maxLen, int hide_text, const char *title);
 void diaSetEnabled(struct UIItem *ui, int id, int enabled);
