@@ -856,11 +856,24 @@ static item_list_t bdmGameListTemplate = {
 
 void bdmInitSemaphore()
 {
+    if (bdmLoadModuleLock >= 0)
+        return;
+
     ee_sema_t semaphore;
     semaphore.init_count = 1;
     semaphore.max_count = 1;
     semaphore.option = 0;
     bdmLoadModuleLock = CreateSema(&semaphore);
+}
+
+void bdmResetModuleState(void)
+{
+    basicBdmModLoaded = 0;
+    usbModLoaded = 0;
+    iLinkModLoaded = 0;
+    mx4sioModLoaded = 0;
+    hddModLoaded = 0;
+    udpbdModLoaded = 0;
 }
 
 static void bdmEnsureDriverSlotsInit(void)
