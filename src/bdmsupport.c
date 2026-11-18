@@ -210,6 +210,9 @@ int bdmEnsureDriverLoaded(int targetType)
 {
     bdmLoadBasicModules();
 
+    if (bdmLoadModuleLock < 0)
+        bdmInitSemaphore();
+    
     WaitSema(bdmLoadModuleLock);
 
     if (targetType == BDM_TYPE_USB && !usbModLoaded) {
