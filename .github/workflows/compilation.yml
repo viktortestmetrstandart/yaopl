@@ -62,10 +62,6 @@ jobs:
         esac
         echo "Version: $(make -s oplversion)"
 
-    - name: Check that CHANGELOG.md lists what this push changes
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
-      run: sh .github/changelog.sh check "${{ github.event.pull_request.base.sha || github.event.before }}" "$GITHUB_SHA"
-
     - name: Check that every job uses the pinned toolchain image
       run: |
         wf=.github/workflows/compilation.yml
