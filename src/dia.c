@@ -638,6 +638,7 @@ static void diaResetValue(struct UIItem *item)
     switch (item->type) {
         case UI_INT:
         case UI_BOOL:
+        case UI_ENUM:
             item->intvalue.current = item->intvalue.def;
             return;
         case UI_STRING:
