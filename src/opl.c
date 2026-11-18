@@ -1494,9 +1494,9 @@ void applyConfig(int themeID, int langID, int skipDeviceRefresh)
         }
 
         if (gActiveDeviceMode >= 0 && list_support[gActiveDeviceMode].support) {
-            struct gui_update_t *id = guiOpCreate(GUI_OP_SELECT_MENU);
-            id->menu.menu = &list_support[gActiveDeviceMode].menuItem;
-            guiDeferUpdate(id);
+            guiLock();
+            menuSetSelectedItem(&list_support[gActiveDeviceMode].menuItem);
+            guiUnlock();
         }
     } else {
         if (changed) {
