@@ -27,7 +27,7 @@ static int iLinkModLoaded = 0;
 static int mx4sioModLoaded = 0;
 static int hddModLoaded = 0;
 static int udpbdModLoaded = 0;
-static s32 bdmLoadModuleLock;
+static s32 bdmLoadModuleLock = -1;
 int bdmDeviceModeStarted;
 
 // 4 dedicated driver-bound slots: [0]=UDPBD, [1]=USB, [2]=MX4SIO, [3]=ATA(BDM HDD)
