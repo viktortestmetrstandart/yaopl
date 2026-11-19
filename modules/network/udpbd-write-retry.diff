@@ -8,7 +8,7 @@
  
  
  struct SUDPBDv2_Header_Padded32 {
-@@ -160,35 +161,28 @@ static int udpbd_read(struct block_device *bd, uint64_t sector, void *buffer, ui
+@@ -160,35 +161,28 @@
      return count;
  }
  
@@ -49,8 +49,7 @@
 +            return -EIO;
          }
      }
- 
-@@ -198,21 +192,22 @@ static int udpbd_write(struct block_device *bd, uint64_t sector, const void *buf
+@@ -198,21 +192,22 @@
          while (count_left--) {
              pkt.hdr.cmdpkt++;
              if (udp_packet_send_ll(udpbd_socket, (udp_packet_t *)&pkt, sizeof(struct SUDPBDv2_Header) + sizeof(union block_type), buffer, 512) < 0) {
@@ -76,13 +75,18 @@
  
          //wait for done...
          WaitEventFlag(g_ev_done, 2 | 1, WEF_OR | WEF_CLEAR, &EFBits);
-@@ -250,11 +245,54 @@ static int udpbd_write(struct block_device *bd, uint64_t sector, const void *buf
+@@ -250,11 +245,54 @@
+     if (g_errno == 0) {
+         M_DEBUG("%s(%d, %d): not written by the server\n", __func__, (uint32_t)sector, count);
+         return count;
+     }
+ 
      M_DEBUG("%s(%d, %d): ERROR\n", __func__, (uint32_t)sector, count);
      g_errno = 0;
 +    g_cmdid = (g_cmdid + 1) & 0x7;
      return -EIO;
  }
- 
++
 +static int udpbd_write(struct block_device *bd, uint64_t sector, const void *buffer, uint16_t count)
 +{
 +    int retries;
@@ -124,5 +128,5 @@
 +
 +    return count;
 +}
-+
+ 
  static void udpbd_flush(struct block_device *bd)
