@@ -1,0 +1,128 @@
+--- a/iop/udpbd/src/udpbd.c
++++ b/iop/udpbd/src/udpbd.c
+@@ -9,6 +9,7 @@
+ #include "main.h"
+ 
+ #define UDPBD_MAX_RETRIES         4
++#define UDPBD_MAX_SECTOR_WRITE    16
+ 
+ 
+ struct SUDPBDv2_Header_Padded32 {
+@@ -160,35 +161,28 @@ static int udpbd_read(struct block_device *bd, uint64_t sector, void *buffer, ui
+     return count;
+ }
+ 
+-static int udpbd_write(struct block_device *bd, uint64_t sector, const void *buffer, uint16_t count)
++static int _udpbd_write(struct block_device *bd, uint64_t sector, const void *buffer, uint16_t count)
+ {
+-    uint32_t EFBits;
++    uint32_t EFBits = 0;
+ 
+     M_DEBUG("%s: sector=%d, count=%d\n", __func__, (uint32_t)sector, count);
+ 
+-    if (bdm_connected == 0)
+-        return -EIO;
+-
+-    if (sector >= bd->sectorCount)
+-        return -EINVAL;
+-
+-    if ((sector + count) > bd->sectorCount)
+-        count = bd->sectorCount - sector;
+-
++    g_errno = 0;
+     g_cmdid = (g_cmdid + 1) & 0x7;
+ 
+     // Send write command
+     {
+         udpbd_pkt_rw_t pkt;
+         udp_packet_init((udp_packet_t *)&pkt, IP_ADDR(255,255,255,255), UDPBD_SERVER_PORT);
+         pkt.rw.hdr.cmd    = UDPBD_CMD_WRITE;
+         pkt.rw.hdr.cmdid  = g_cmdid;
+         pkt.rw.hdr.cmdpkt = 0;
+         pkt.rw.sector_count = count;
+         pkt.rw.sector_nr = sector;
+ 
+         if (udp_packet_send(udpbd_socket, (udp_packet_t *)&pkt, sizeof(struct SUDPBDv2_RWRequest)) < 0) {
+             M_DEBUG("%s(%d, %d): ERROR\n", __func__, (uint32_t)sector, count);
+-            return -1;
++            g_cmdid = (g_cmdid + 1) & 0x7;
++            return -EIO;
+         }
+     }
+ 
+@@ -198,21 +192,22 @@ static int udpbd_write(struct block_device *bd, uint64_t sector, const void *buf
+         while (count_left--) {
+             pkt.hdr.cmdpkt++;
+             if (udp_packet_send_ll(udpbd_socket, (udp_packet_t *)&pkt, sizeof(struct SUDPBDv2_Header) + sizeof(union block_type), buffer, 512) < 0) {
+                 M_DEBUG("%s(%d, %d): ERROR\n", __func__, (uint32_t)sector, count);
+-                return -1;
++                g_cmdid = (g_cmdid + 1) & 0x7;
++                return -EIO;
+             }
+             buffer = (const uint8_t *)buffer + 512;
+         }
+     }
+ 
+     // Wait for 'done' from server
+     {
+         iop_sys_clock_t clock;
+ 
+         // Set alarm in case something hangs
+-        // 200ms
+-        USec2SysClock((200 * 1000), &clock);
++        // 1500ms (allow slow USB flash write/erase stalls on server)
++        USec2SysClock((1500 * 1000), &clock);
+         SetAlarm(&clock, _udpbd_timeout, NULL);
+ 
+         //wait for done...
+         WaitEventFlag(g_ev_done, 2 | 1, WEF_OR | WEF_CLEAR, &EFBits);
+@@ -250,11 +245,54 @@ static int udpbd_write(struct block_device *bd, uint64_t sector, const void *buf
+     M_DEBUG("%s(%d, %d): ERROR\n", __func__, (uint32_t)sector, count);
+     g_errno = 0;
++    g_cmdid = (g_cmdid + 1) & 0x7;
+     return -EIO;
+ }
+ 
++static int udpbd_write(struct block_device *bd, uint64_t sector, const void *buffer, uint16_t count)
++{
++    int retries;
++    uint16_t count_left;
++
++    if (bdm_connected == 0)
++        return -EIO;
++
++    if (sector >= bd->sectorCount)
++        return -EINVAL;
++
++    if ((sector + count) > bd->sectorCount)
++        count = bd->sectorCount - sector;
++
++    count_left = count;
++    while (count_left > 0)
++    {
++        uint16_t count_block = count_left > UDPBD_MAX_SECTOR_WRITE ? UDPBD_MAX_SECTOR_WRITE : count_left;
++
++        for (retries = 0; retries < UDPBD_MAX_RETRIES; retries++)
++        {
++            if (_udpbd_write(bd, sector, buffer, count_block) == count_block)
++                break;
++            DelayThread(1000);
++        }
++
++        if (retries == UDPBD_MAX_RETRIES)
++        {
++            M_DEBUG("%s: too many errors, disconnecting\n", __func__);
++            bdm_disconnect_bd(&g_udpbd);
++            bdm_connected = 0;
++            return -EIO;
++        }
++
++        count_left -= count_block;
++        sector += count_block;
++        buffer = (const uint8_t *)buffer + count_block * g_udpbd.sectorSize;
++    }
++
++    return count;
++}
++
+ static void udpbd_flush(struct block_device *bd)
